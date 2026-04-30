@@ -1,0 +1,69 @@
+{{- if .Values.sv.observability.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "streamvault.fullname" . }}-grafana
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+spec:
+  serviceName: {{ include "streamvault.fullname" . }}-grafana
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "grafana") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "grafana") | nindent 8 }}
+    spec:
+      containers:
+        - name: grafana
+          image: "{{ .Values.sv.observability.grafana.image.repository }}:{{ .Values.sv.observability.grafana.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.observability.grafana.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: {{ .Values.sv.observability.grafana.adminUser | quote }}
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: grafana-admin-password
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.observability.grafana.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/grafana
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.sv.observability.grafana.storageClass }}
+        storageClassName: {{ .Values.sv.observability.grafana.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.sv.observability.grafana.storage }}
+{{- end }}

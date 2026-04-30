@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamvault.fullname" . }}-core
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+spec:
+  replicas: {{ .Values.sv.core.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "core") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "core") | nindent 8 }}
+    spec:
+      containers:
+        - name: core
+          image: "{{ .Values.sv.core.image.repository }}:{{ .Values.sv.core.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.core.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: postgres-password
+            - name: DB_URL
+              value: "postgresql://{{ .Values.sv.postgres.username }}:$(POSTGRES_PASSWORD)@{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.database }}"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "{{ include "streamvault.fullname" . }}-kafka:9092"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: redis-password
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ include "streamvault.fullname" . }}-redis:6379"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: jwt-secret
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.sv.core.healthPath }}
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.sv.core.healthPath }}
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.core.resources | nindent 12 }}

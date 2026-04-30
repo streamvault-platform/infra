@@ -1,0 +1,26 @@
+# Secrets
+.env
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Grafana dashboard exports (generated, not source-controlled)
+grafana/dashboards/*.json
+
+# Helm build artifacts
+helm/charts/
+helm/*.tgz
+
+# Docker volume data (if ever bind-mounted locally)
+data/
+volumes/
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp

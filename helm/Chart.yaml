@@ -1,0 +1,6 @@
+apiVersion: v2
+name: streamvault
+description: Helm chart for Streamvault — a self-hostable music/video streaming platform.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

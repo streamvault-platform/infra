@@ -1,0 +1,74 @@
+{{- if .Values.sv.observability.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "streamvault.fullname" . }}-prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+spec:
+  serviceName: {{ include "streamvault.fullname" . }}-prometheus
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "prometheus") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "prometheus") | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/observability/prometheus-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: prometheus
+          image: "{{ .Values.sv.observability.prometheus.image.repository }}:{{ .Values.sv.observability.prometheus.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.observability.prometheus.image.pullPolicy }}
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time={{ .Values.sv.observability.prometheus.retention }}
+          ports:
+            - name: http
+              containerPort: 9090
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.observability.prometheus.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+              readOnly: true
+            - name: data
+              mountPath: /prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "streamvault.fullname" . }}-prometheus
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.sv.observability.prometheus.storageClass }}
+        storageClassName: {{ .Values.sv.observability.prometheus.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.sv.observability.prometheus.storage }}
+{{- end }}

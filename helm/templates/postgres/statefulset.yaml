@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "streamvault.fullname" . }}-postgres
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ include "streamvault.fullname" . }}-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "postgres") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "postgres") | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.sv.postgres.image.repository }}:{{ .Values.sv.postgres.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.postgres.image.pullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.sv.postgres.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: {{ .Values.sv.postgres.database | quote }}
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.sv.postgres.username }}
+                - -d
+                - {{ .Values.sv.postgres.database }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.sv.postgres.username }}
+                - -d
+                - {{ .Values.sv.postgres.database }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.postgres.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.sv.postgres.storageClass }}
+        storageClassName: {{ .Values.sv.postgres.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.sv.postgres.storage }}

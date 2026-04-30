@@ -1,0 +1,19 @@
+{{- if .Values.sv.observability.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamvault.fullname" . }}-prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9090
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "streamvault.componentSelectorLabels" (list . "prometheus") | nindent 4 }}
+{{- end }}

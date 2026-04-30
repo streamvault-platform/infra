@@ -1,0 +1,205 @@
+# -- Override the chart name
+nameOverride: ""
+# -- Override the fully-qualified app name
+fullnameOverride: ""
+
+sv:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image:
+      repository: postgres
+      # -- Must stay on 16.x; do not bump major without testing migrations
+      tag: "16"
+      pullPolicy: IfNotPresent
+    # -- Database name for the core service
+    database: streamvault_core
+    # -- Database name for the pipeline service
+    pipelineDatabase: streamvault_pipeline
+    # -- PostgreSQL superuser username
+    username: streamvault
+    # -- PostgreSQL password (required)
+    password: ""
+    # -- PVC size for the postgres data directory
+    storage: 10Gi
+    # -- StorageClass name; leave empty to use the cluster default
+    storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+  # ── Kafka (KRaft, no Zookeeper) ────────────────────────────────────────────
+  kafka:
+    image:
+      repository: apache/kafka
+      tag: "3.7.1"
+      pullPolicy: IfNotPresent
+    # -- KRaft cluster ID (required).
+    #    Generate with: docker run --rm bitnami/kafka:3.7.1 kafka-storage.sh random-uuid
+    clusterId: ""
+    # -- Broker/controller node ID
+    nodeId: 1
+    # -- PVC size for Kafka data
+    storage: 10Gi
+    # -- StorageClass name; leave empty to use the cluster default
+    storageClass: ""
+    # -- Topics to create on first install/upgrade (idempotent; skips existing topics)
+    topics:
+      - name: media.uploaded
+        partitions: 3
+        replicationFactor: 1
+      - name: media.transcoded
+        partitions: 3
+        replicationFactor: 1
+      - name: media.metadata-ready
+        partitions: 3
+        replicationFactor: 1
+      - name: watch.sync-requested
+        partitions: 3
+        replicationFactor: 1
+      - name: watch.sync-ready
+        partitions: 3
+        replicationFactor: 1
+      - name: scrobble.events
+        partitions: 6
+        replicationFactor: 1
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image:
+      repository: redis
+      tag: "7.2-alpine"
+      pullPolicy: IfNotPresent
+    # -- Redis AUTH password (required)
+    password: ""
+    # -- PVC size for Redis AOF/RDB data
+    storage: 2Gi
+    # -- StorageClass name; leave empty to use the cluster default
+    storageClass: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  # ── Envoy (edge gateway) ────────────────────────────────────────────────────
+  envoy:
+    image:
+      repository: envoyproxy/envoy
+      tag: "v1.29.4"
+      pullPolicy: IfNotPresent
+    # -- Number of Envoy replicas
+    replicas: 1
+    service:
+      # -- Service type: LoadBalancer for cloud, NodePort for bare-metal
+      type: LoadBalancer
+      # -- HTTP port
+      httpPort: 8080
+      # -- HTTPS port (reserved; TLS termination not yet configured)
+      httpsPort: 8443
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+  # ── Core service ────────────────────────────────────────────────────────────
+  core:
+    image:
+      repository: ghcr.io/streamvault/core
+      tag: "0.1.0"
+      pullPolicy: IfNotPresent
+    # -- Number of replicas
+    replicas: 1
+    # -- JWT signing secret (required)
+    jwtSecret: ""
+    # -- Health check path exposed by the app; must return 200 when ready
+    healthPath: /api/health
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+
+  # ── Pipeline service ────────────────────────────────────────────────────────
+  pipeline:
+    image:
+      repository: ghcr.io/streamvault/pipeline
+      tag: "0.1.0"
+      pullPolicy: IfNotPresent
+    # -- Number of replicas
+    replicas: 1
+    # -- Health check path exposed by the app; must return 200 when ready
+    healthPath: /health
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+
+  # ── Observability (opt-in) ──────────────────────────────────────────────────
+  observability:
+    # -- Set to true to deploy Prometheus + Grafana alongside the platform
+    enabled: false
+
+    prometheus:
+      image:
+        repository: prom/prometheus
+        tag: "v2.52.0"
+        pullPolicy: IfNotPresent
+      # -- TSDB retention period
+      retention: 15d
+      # -- PVC size for Prometheus data
+      storage: 20Gi
+      # -- StorageClass name; leave empty to use the cluster default
+      storageClass: ""
+      resources:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          cpu: "1"
+          memory: 2Gi
+
+    grafana:
+      image:
+        repository: grafana/grafana
+        tag: "11.0.0"
+        pullPolicy: IfNotPresent
+      # -- Grafana admin username
+      adminUser: admin
+      # -- Grafana admin password (required when observability.enabled=true)
+      adminPassword: ""
+      # -- PVC size for Grafana data
+      storage: 5Gi
+      # -- StorageClass name; leave empty to use the cluster default
+      storageClass: ""
+      service:
+        # -- Service type for Grafana UI access
+        type: ClusterIP
+        port: 3000
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
