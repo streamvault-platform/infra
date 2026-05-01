@@ -53,6 +53,18 @@ services:
       retries: 5
       start_period: 30s
 
+  streamvault-kafka-init:
+    image: apache/kafka:3.7.1
+    profiles: [standard, full]
+    restart: "no"
+    networks: [streamvault-net]
+    depends_on:
+      streamvault-kafka:
+        condition: service_healthy
+    volumes:
+      - ./kafka-topics.sh:/scripts/kafka-topics.sh:ro
+    command: ["/bin/bash", "/scripts/kafka-topics.sh"]
+
   streamvault-redis:
     image: redis:7.2-alpine
     profiles: [standard, full]
@@ -79,7 +91,7 @@ services:
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:9901/ready"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9901/ready"]
       interval: 10s
       timeout: 5s
       retries: 5

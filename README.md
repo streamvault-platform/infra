@@ -31,24 +31,7 @@ python3 -c "import uuid; print(uuid.uuid4())"
 | `standard` | Postgres, Kafka, Redis, Envoy, Core, Pipeline | `docker compose --profile standard up -d` |
 | `full` | Everything in standard + Prometheus + Grafana | `docker compose --profile full up -d` |
 
-### Creating Kafka topics
-
-Run once after the first `standard` or `full` boot:
-
-```bash
-docker compose exec streamvault-kafka bash /opt/kafka/bin/kafka-topics.sh \
-  --bootstrap-server localhost:9092 \
-  --create ...
-# Or use the bundled script:
-docker compose exec streamvault-kafka bash -c \
-  "KAFKA_BOOTSTRAP_SERVERS=localhost:9092 bash /scripts/create-topics.sh"
-```
-
-From the host (requires Kafka CLI on PATH):
-
-```bash
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092 bash kafka-topics.sh
-```
+Kafka topics are created automatically on first boot via an init container. No manual steps required.
 
 ### Port reference
 
