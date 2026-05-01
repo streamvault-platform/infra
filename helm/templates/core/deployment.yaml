@@ -25,27 +25,25 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
-            - name: POSTGRES_PASSWORD
+            - name: QUARKUS_DATASOURCE_USERNAME
+              value: "{{ .Values.sv.postgres.username }}"
+            - name: QUARKUS_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "streamvault.secretName" . }}
                   key: postgres-password
-            - name: DB_URL
-              value: "postgresql://{{ .Values.sv.postgres.username }}:$(POSTGRES_PASSWORD)@{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.database }}"
+            - name: QUARKUS_DATASOURCE_REACTIVE_URL
+              value: "postgresql://{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.database }}"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "{{ include "streamvault.fullname" . }}-kafka:9092"
-            - name: REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "streamvault.secretName" . }}
-                  key: redis-password
-            - name: REDIS_URL
-              value: "redis://:$(REDIS_PASSWORD)@{{ include "streamvault.fullname" . }}-redis:6379"
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "streamvault.secretName" . }}
-                  key: jwt-secret
+            - name: STREAMVAULT_AUTH_JWT_PRIVATE_KEY_LOCATION
+              value: /jwt/private.pem
+            - name: STREAMVAULT_AUTH_JWT_PUBLIC_KEY_LOCATION
+              value: /jwt/cert.pem
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /jwt
+              readOnly: true
           livenessProbe:
             httpGet:
               path: {{ .Values.sv.core.healthPath }}
@@ -64,3 +62,12 @@ spec:
             failureThreshold: 3
           resources:
             {{- toYaml .Values.sv.core.resources | nindent 12 }}
+      volumes:
+        - name: jwt-keys
+          secret:
+            secretName: {{ include "streamvault.secretName" . }}
+            items:
+              - key: jwt-private-key
+                path: private.pem
+              - key: jwt-cert
+                path: cert.pem

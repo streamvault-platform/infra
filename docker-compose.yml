@@ -7,6 +7,7 @@ volumes:
   pipeline_data:
   kafka_data:
   redis_data:
+  jwt_keys:
 
 services:
 
@@ -65,6 +66,26 @@ services:
       - ./kafka-topics.sh:/scripts/kafka-topics.sh:ro
     command: ["/bin/bash", "/scripts/kafka-topics.sh"]
 
+  streamvault-jwt-init:
+    image: alpine:3.20
+    profiles: [standard, full]
+    restart: "no"
+    networks: [streamvault-net]
+    volumes:
+      - jwt_keys:/jwt
+    command: >
+      sh -c "
+        if [ ! -f /jwt/private.pem ]; then
+          apk add --no-cache openssl &&
+          openssl req -x509 -newkey rsa:2048
+            -keyout /jwt/private.pem -out /jwt/cert.pem
+            -days 3650 -nodes -subj '/CN=streamvault' &&
+          echo 'JWT key pair generated'
+        else
+          echo 'JWT key pair already exists, skipping'
+        fi
+      "
+
   streamvault-redis:
     image: redis:7.2.13-alpine
     profiles: [standard, full]
@@ -112,11 +133,17 @@ services:
         condition: service_healthy
       streamvault-envoy:
         condition: service_healthy
+      streamvault-jwt-init:
+        condition: service_completed_successfully
+    volumes:
+      - jwt_keys:/jwt:ro
     environment:
-      DB_URL: postgresql://${POSTGRES_USER:-streamvault}:${POSTGRES_PASSWORD}@streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      QUARKUS_DATASOURCE_REACTIVE_URL: postgresql://streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-streamvault}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       KAFKA_BOOTSTRAP_SERVERS: streamvault-kafka:9092
-      REDIS_URL: redis://:${REDIS_PASSWORD}@streamvault-redis:6379
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      STREAMVAULT_AUTH_JWT_PRIVATE_KEY_LOCATION: /jwt/private.pem
+      STREAMVAULT_AUTH_JWT_PUBLIC_KEY_LOCATION: /jwt/cert.pem
 
   streamvault-pipeline:
     image: ${PIPELINE_IMAGE:-busybox:1.36}
