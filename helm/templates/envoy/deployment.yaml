@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamvault.fullname" . }}-envoy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: envoy
+spec:
+  replicas: {{ .Values.sv.envoy.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "envoy") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "envoy") | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/envoy/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: envoy
+          image: "{{ .Values.sv.envoy.image.repository }}:{{ .Values.sv.envoy.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.envoy.image.pullPolicy }}
+          args:
+            - -c
+            - /etc/envoy/envoy.yaml
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+            - name: admin
+              containerPort: 9901
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: admin
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: admin
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.envoy.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/envoy
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "streamvault.fullname" . }}-envoy

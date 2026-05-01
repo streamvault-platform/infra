@@ -1,0 +1,134 @@
+networks:
+  streamvault-net:
+    driver: bridge
+
+volumes:
+  core_data:
+  pipeline_data:
+  kafka_data:
+  redis_data:
+
+services:
+
+  streamvault-postgres:
+    image: postgres:16
+    profiles: [standard, full]
+    restart: unless-stopped
+    networks: [streamvault-net]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-streamvault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-streamvault_core}
+    volumes:
+      - core_data:/var/lib/postgresql/data
+      - pipeline_data:/var/lib/postgresql/pipeline
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-streamvault} -d ${POSTGRES_DB:-streamvault_core}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  streamvault-kafka:
+    image: apache/kafka:3.7.1
+    profiles: [standard, full]
+    restart: unless-stopped
+    networks: [streamvault-net]
+    environment:
+      KAFKA_NODE_ID: ${KAFKA_NODE_ID:-1}
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://streamvault-kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: ${KAFKA_NODE_ID:-1}@streamvault-kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:?KAFKA_CLUSTER_ID is required}
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  streamvault-kafka-init:
+    image: apache/kafka:3.7.1
+    profiles: [standard, full]
+    restart: "no"
+    networks: [streamvault-net]
+    depends_on:
+      streamvault-kafka:
+        condition: service_healthy
+    volumes:
+      - ./kafka-topics.sh:/scripts/kafka-topics.sh:ro
+    command: ["/bin/bash", "/scripts/kafka-topics.sh"]
+
+  streamvault-redis:
+    image: redis:7.2-alpine
+    profiles: [standard, full]
+    restart: unless-stopped
+    networks: [streamvault-net]
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  streamvault-envoy:
+    image: envoyproxy/envoy:v1.29.4
+    profiles: [standard, full]
+    restart: unless-stopped
+    networks: [streamvault-net]
+    ports:
+      - "${ENVOY_HTTP_PORT:-8080}:8080"
+      - "${ENVOY_HTTPS_PORT:-8443}:8443"
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9901'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  streamvault-core:
+    image: ${CORE_IMAGE:-busybox:1.36}
+    command: sh -c "echo 'streamvault-core placeholder' && sleep infinity"
+    profiles: [standard, full]
+    restart: unless-stopped
+    networks: [streamvault-net]
+    depends_on:
+      streamvault-postgres:
+        condition: service_healthy
+      streamvault-kafka:
+        condition: service_healthy
+      streamvault-redis:
+        condition: service_healthy
+      streamvault-envoy:
+        condition: service_healthy
+    environment:
+      DB_URL: postgresql://${POSTGRES_USER:-streamvault}:${POSTGRES_PASSWORD}@streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      KAFKA_BOOTSTRAP_SERVERS: streamvault-kafka:9092
+      REDIS_URL: redis://:${REDIS_PASSWORD}@streamvault-redis:6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+
+  streamvault-pipeline:
+    image: ${PIPELINE_IMAGE:-busybox:1.36}
+    command: sh -c "echo 'streamvault-pipeline placeholder' && sleep infinity"
+    profiles: [standard, full]
+    restart: unless-stopped
+    networks: [streamvault-net]
+    depends_on:
+      streamvault-postgres:
+        condition: service_healthy
+      streamvault-kafka:
+        condition: service_healthy
+    environment:
+      DB_URL: postgresql://${POSTGRES_USER:-streamvault}:${POSTGRES_PASSWORD}@streamvault-postgres:5432/${POSTGRES_PIPELINE_DB:-streamvault_pipeline}
+      KAFKA_BOOTSTRAP_SERVERS: streamvault-kafka:9092

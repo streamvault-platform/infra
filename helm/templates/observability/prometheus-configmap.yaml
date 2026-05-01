@@ -1,0 +1,34 @@
+{{- if .Values.sv.observability.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "streamvault.fullname" . }}-prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: streamvault-core
+        static_configs:
+          - targets: ["{{ include "streamvault.fullname" . }}-core:8080"]
+        metrics_path: /metrics
+        scrape_interval: 15s
+
+      - job_name: streamvault-pipeline
+        static_configs:
+          - targets: ["{{ include "streamvault.fullname" . }}-pipeline:8081"]
+        metrics_path: /metrics
+        scrape_interval: 15s
+
+      - job_name: envoy
+        static_configs:
+          - targets: ["{{ include "streamvault.fullname" . }}-envoy:9901"]
+        metrics_path: /stats/prometheus
+        scrape_interval: 30s
+{{- end }}
