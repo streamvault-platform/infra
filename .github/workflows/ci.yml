@@ -95,7 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           version: '3.14.0'
 
@@ -123,7 +123,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           version: '3.14.0'
 
@@ -139,6 +139,18 @@ jobs:
           helm package --version "${rc_version}" ./helm
           helm push "streamvault-${rc_version}.tgz" \
             oci://ghcr.io/${{ github.repository_owner }}/charts
+
+  # ── Deploy RC (release branch → staging, placeholder) ────────────────────
+  deploy-rc:
+    name: Deploy RC
+    needs: [publish-rc]
+    if: github.ref == 'refs/heads/release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # TODO: add kubeconfig setup and helm upgrade command for staging cluster
+      - name: Deploy RC (placeholder)
+        run: echo "Configure staging cluster credentials and run helm upgrade here"
 
   # ── Publish release (v* tag on main → GHCR) ──────────────────────────────
   publish:
@@ -160,7 +172,7 @@ jobs:
           git merge-base --is-ancestor ${{ github.sha }} origin/main \
             || { echo "Tag ${{ github.ref_name }} is not on main — aborting"; exit 1; }
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           version: '3.14.0'
 
