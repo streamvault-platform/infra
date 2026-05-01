@@ -125,8 +125,6 @@ sv:
       pullPolicy: IfNotPresent
     # -- Number of replicas
     replicas: 1
-    # -- JWT signing secret (required)
-    jwtSecret: ""
     # -- Health check path exposed by the app; must return 200 when ready
     healthPath: /api/health
     resources:
