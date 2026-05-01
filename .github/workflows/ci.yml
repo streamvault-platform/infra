@@ -1,0 +1,166 @@
+name: CI / CD
+
+on:
+  pull_request:
+  push:
+    branches: [develop, release]
+    tags: ['v*']
+
+jobs:
+  # ── Tests ─────────────────────────────────────────────────────────────────
+  helm-test:
+    name: Helm lint & validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: '3.14.0'
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin
+
+      - name: Lint (standard)
+        run: |
+          helm lint ./helm \
+            --set sv.postgres.password=test \
+            --set sv.redis.password=test \
+            --set sv.core.jwtSecret=test \
+            --set sv.kafka.clusterId=test
+
+      - name: Lint (with observability)
+        run: |
+          helm lint ./helm \
+            --set sv.postgres.password=test \
+            --set sv.redis.password=test \
+            --set sv.core.jwtSecret=test \
+            --set sv.kafka.clusterId=test \
+            --set sv.observability.enabled=true \
+            --set sv.observability.grafana.adminPassword=test
+
+      - name: Validate rendered manifests (standard)
+        run: |
+          helm template streamvault ./helm \
+            --set sv.postgres.password=test \
+            --set sv.redis.password=test \
+            --set sv.core.jwtSecret=test \
+            --set sv.kafka.clusterId=test \
+          | kubeconform -strict -summary
+
+      - name: Validate rendered manifests (with observability)
+        run: |
+          helm template streamvault ./helm \
+            --set sv.postgres.password=test \
+            --set sv.redis.password=test \
+            --set sv.core.jwtSecret=test \
+            --set sv.kafka.clusterId=test \
+            --set sv.observability.enabled=true \
+            --set sv.observability.grafana.adminPassword=test \
+          | kubeconform -strict -summary
+
+  compose-test:
+    name: Docker Compose config validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env
+        run: |
+          {
+            echo "POSTGRES_PASSWORD=cipassword"
+            echo "REDIS_PASSWORD=cipassword"
+            echo "JWT_SECRET=ci-jwt-secret-for-testing"
+            echo "KAFKA_CLUSTER_ID=$(python3 -c 'import uuid; print(uuid.uuid4())')"
+            echo "GF_SECURITY_ADMIN_PASSWORD=cipassword"
+          } > .env
+
+      - name: Validate standard profile
+        run: docker compose --profile standard config --quiet
+
+      - name: Validate full profile
+        run: docker compose --profile full config --quiet
+
+  # ── Publish canary (develop → GHCR) ───────────────────────────────────────
+  publish-canary:
+    name: Publish canary chart
+    needs: [helm-test, compose-test]
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: '3.14.0'
+
+      - name: Set canary version
+        id: version
+        run: echo "version=0.0.0-dev.$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            --username ${{ github.actor }} --password-stdin
+
+      - name: Package and push canary chart
+        run: |
+          helm package ./helm --version ${{ steps.version.outputs.version }}
+          helm push streamvault-${{ steps.version.outputs.version }}.tgz \
+            oci://ghcr.io/${{ github.repository_owner }}/charts
+
+  # ── Deploy (release branch) ───────────────────────────────────────────────
+  deploy:
+    name: Deploy
+    needs: [helm-test, compose-test]
+    if: github.ref == 'refs/heads/release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO: add kubeconfig setup and helm upgrade command for target cluster
+      - name: Deploy (placeholder)
+        run: echo "Configure target cluster credentials and run helm upgrade here"
+
+  # ── Publish versioned chart (tag on main → GHCR) ──────────────────────────
+  publish:
+    name: Publish versioned chart
+    needs: [helm-test, compose-test]
+    if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main branch
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor ${{ github.sha }} origin/main \
+            || { echo "Tag ${{ github.ref_name }} is not on main — aborting"; exit 1; }
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: '3.14.0'
+
+      - name: Parse version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            --username ${{ github.actor }} --password-stdin
+
+      - name: Package and push chart
+        run: |
+          helm package ./helm --version ${{ steps.version.outputs.version }}
+          helm push streamvault-${{ steps.version.outputs.version }}.tgz \
+            oci://ghcr.io/${{ github.repository_owner }}/charts
