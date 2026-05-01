@@ -18,6 +18,6 @@ For each image, use the Docker Hub API (`https://hub.docker.com/v2/repositories/
 If any updates are found:
 1. Create a new branch `chore/bump-image-versions-<YYYY-MM-DD>`
 2. Update the pinned tags in `docker-compose.yml` and `docker-compose.override.yml`
-3. Open a PR titled `chore: bump Docker image versions (<date>)` with a table listing old vs new version for each changed image
+3. Open a PR titled `chore: bump Docker image versions (<date>)` with a table listing old vs new version for each changed image, into develop branch (never main)
 
 If nothing needs updating, report "All images are up to date."
