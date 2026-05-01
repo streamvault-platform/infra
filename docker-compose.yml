@@ -91,7 +91,7 @@ services:
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9901/ready"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9901'"]
       interval: 10s
       timeout: 5s
       retries: 5

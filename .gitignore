@@ -12,6 +12,7 @@ grafana/dashboards/*.json
 # Helm build artifacts
 helm/charts/
 helm/*.tgz
+*.tgz
 
 # Docker volume data (if ever bind-mounted locally)
 data/
