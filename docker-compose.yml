@@ -11,7 +11,7 @@ volumes:
 services:
 
   streamvault-postgres:
-    image: postgres:16
+    image: postgres:16.13
     profiles: [standard, full]
     restart: unless-stopped
     networks: [streamvault-net]
@@ -30,7 +30,7 @@ services:
       start_period: 15s
 
   streamvault-kafka:
-    image: apache/kafka:3.7.1
+    image: apache/kafka:3.7.2
     profiles: [standard, full]
     restart: unless-stopped
     networks: [streamvault-net]
@@ -54,7 +54,7 @@ services:
       start_period: 30s
 
   streamvault-kafka-init:
-    image: apache/kafka:3.7.1
+    image: apache/kafka:3.7.2
     profiles: [standard, full]
     restart: "no"
     networks: [streamvault-net]
@@ -66,7 +66,7 @@ services:
     command: ["/bin/bash", "/scripts/kafka-topics.sh"]
 
   streamvault-redis:
-    image: redis:7.2-alpine
+    image: redis:7.2.13-alpine
     profiles: [standard, full]
     restart: unless-stopped
     networks: [streamvault-net]
@@ -81,7 +81,7 @@ services:
       start_period: 10s
 
   streamvault-envoy:
-    image: envoyproxy/envoy:v1.29.4
+    image: envoyproxy/envoy:v1.29.12
     profiles: [standard, full]
     restart: unless-stopped
     networks: [streamvault-net]
