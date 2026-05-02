@@ -30,8 +30,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "streamvault.secretName" . }}
                   key: postgres-password
-            - name: DB_URL
-              value: "postgresql://{{ .Values.sv.postgres.username }}:$(POSTGRES_PASSWORD)@{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.database }}"
+            - name: QUARKUS_DATASOURCE_REACTIVE_URL
+              value: "postgresql://{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.database }}"
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: "jdbc:postgresql://{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.database }}"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "{{ include "streamvault.fullname" . }}-kafka:9092"
             - name: REDIS_PASSWORD

@@ -12,9 +12,9 @@ services:
 
   streamvault-postgres:
     image: postgres:16
-    profiles: [standard, full]
+    profiles: [ standard, full ]
     restart: unless-stopped
-    networks: [streamvault-net]
+    networks: [ streamvault-net ]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-streamvault}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
@@ -23,7 +23,12 @@ services:
       - core_data:/var/lib/postgresql/data
       - pipeline_data:/var/lib/postgresql/pipeline
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-streamvault} -d ${POSTGRES_DB:-streamvault_core}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-streamvault} -d
+            ${POSTGRES_DB:-streamvault_core}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,9 +36,9 @@ services:
 
   streamvault-kafka:
     image: apache/kafka:3.7.1
-    profiles: [standard, full]
+    profiles: [ standard, full ]
     restart: unless-stopped
-    networks: [streamvault-net]
+    networks: [ streamvault-net ]
     environment:
       KAFKA_NODE_ID: ${KAFKA_NODE_ID:-1}
       KAFKA_PROCESS_ROLES: broker,controller
@@ -47,7 +52,12 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server
+            localhost:9092",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -55,26 +65,49 @@ services:
 
   streamvault-kafka-init:
     image: apache/kafka:3.7.1
-    profiles: [standard, full]
+    profiles: [ standard, full ]
     restart: "no"
-    networks: [streamvault-net]
+    networks: [ streamvault-net ]
     depends_on:
       streamvault-kafka:
         condition: service_healthy
     volumes:
       - ./kafka-topics.sh:/scripts/kafka-topics.sh:ro
-    command: ["/bin/bash", "/scripts/kafka-topics.sh"]
+    command: [ "/bin/bash", "/scripts/kafka-topics.sh" ]
+
+  streamvault-jwt-init:
+    image: alpine:3.20
+    profiles: [ standard, full ]
+    restart: "no"
+    networks: [ streamvault-net ]
+    volumes:
+      - jwt_keys:/jwt
+    command:
+      - sh
+      - -c
+      - |
+        if [ ! -f /jwt/private.pem ]; then
+          apk add --no-cache openssl
+          openssl genrsa -out /jwt/private.pem 2048
+          openssl req -new -x509 -key /jwt/private.pem -out /jwt/cert.pem -days 3650 -subj '/CN=streamvault'
+          chown 185:185 /jwt/private.pem /jwt/cert.pem
+          chmod 400 /jwt/private.pem
+          chmod 444 /jwt/cert.pem
+          echo 'JWT key pair generated'
+        else
+          echo 'JWT key pair already exists, skipping'
+        fi
 
   streamvault-redis:
     image: redis:7.2-alpine
-    profiles: [standard, full]
+    profiles: [ standard, full ]
     restart: unless-stopped
-    networks: [streamvault-net]
+    networks: [ streamvault-net ]
     command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -82,27 +115,28 @@ services:
 
   streamvault-envoy:
     image: envoyproxy/envoy:v1.29.4
-    profiles: [standard, full]
+    profiles: [ standard, full ]
     restart: unless-stopped
-    networks: [streamvault-net]
+    networks: [ streamvault-net ]
     ports:
-      - "${ENVOY_HTTP_PORT:-8080}:8080"
+      - "${ENVOY_HTTP_PORT:-8090}:8090"
       - "${ENVOY_HTTPS_PORT:-8443}:8443"
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9901'"]
+      test: [ "CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9901'" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
   streamvault-core:
-    image: ${CORE_IMAGE:-busybox:1.36}
-    command: sh -c "echo 'streamvault-core placeholder' && sleep infinity"
-    profiles: [standard, full]
+    image: ${CORE_IMAGE}
+    profiles: [ standard, full ]
     restart: unless-stopped
-    networks: [streamvault-net]
+    networks: [ streamvault-net ]
+    ports:
+      - 8080:8080
     depends_on:
       streamvault-postgres:
         condition: service_healthy
@@ -112,8 +146,16 @@ services:
         condition: service_healthy
       streamvault-envoy:
         condition: service_healthy
+      streamvault-jwt-init:
+        condition: service_completed_successfully
+    volumes:
+      - jwt_keys:/jwt:ro
+    # TODO: might get rid of quarkus prefix, user streamvault namespace in env vars (also check helm)
     environment:
-      DB_URL: postgresql://${POSTGRES_USER:-streamvault}:${POSTGRES_PASSWORD}@streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      QUARKUS_DATASOURCE_REACTIVE_URL: postgresql://streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-streamvault}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
       KAFKA_BOOTSTRAP_SERVERS: streamvault-kafka:9092
       REDIS_URL: redis://:${REDIS_PASSWORD}@streamvault-redis:6379
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
@@ -121,9 +163,9 @@ services:
   streamvault-pipeline:
     image: ${PIPELINE_IMAGE:-busybox:1.36}
     command: sh -c "echo 'streamvault-pipeline placeholder' && sleep infinity"
-    profiles: [standard, full]
+    profiles: [ standard, full ]
     restart: unless-stopped
-    networks: [streamvault-net]
+    networks: [ streamvault-net ]
     depends_on:
       streamvault-postgres:
         condition: service_healthy

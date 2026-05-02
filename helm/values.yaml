@@ -120,8 +120,8 @@ sv:
   # ── Core service ────────────────────────────────────────────────────────────
   core:
     image:
-      repository: ghcr.io/streamvault/core
-      tag: "0.1.0"
+      repository: ghcr.io/streamvault-platform/core
+      tag: "0.1.0-dev"
       pullPolicy: IfNotPresent
     # -- Number of replicas
     replicas: 1
