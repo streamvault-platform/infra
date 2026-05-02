@@ -1,0 +1,21 @@
+# -- StorageClass for JWT key storage.
+# Cloud providers (EKS, GKE, AKS) encrypt PVs at rest by default.
+# For on-premise clusters, use an encrypted StorageClass (e.g. LUKS-backed).
+# Leave empty to use the cluster default.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "streamvault.fullname" . }}-jwt-keys
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.sv.core.jwtStorageClass }}
+  storageClassName: {{ .Values.sv.core.jwtStorageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: 1Mi

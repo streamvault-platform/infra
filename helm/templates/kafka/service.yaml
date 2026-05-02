@@ -1,3 +1,30 @@
+{{- /* Headless service — governing service for the StatefulSet, enables stable pod DNS.
+     Controller-quorum traffic (port 9093) uses this to reach the pod directly. */ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamvault.fullname" . }}-kafka-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+spec:
+  clusterIP: None
+  sessionAffinity: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: kafka
+      port: 9092
+      targetPort: kafka
+      protocol: TCP
+    - name: controller
+      port: 9093
+      targetPort: controller
+      protocol: TCP
+  selector:
+    {{- include "streamvault.componentSelectorLabels" (list . "kafka") | nindent 4 }}
+---
+{{- /* ClusterIP service — used by core and pipeline to reach the broker on port 9092. */ -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -12,10 +39,6 @@ spec:
     - name: kafka
       port: 9092
       targetPort: kafka
-      protocol: TCP
-    - name: controller
-      port: 9093
-      targetPort: controller
       protocol: TCP
   selector:
     {{- include "streamvault.componentSelectorLabels" (list . "kafka") | nindent 4 }}

@@ -37,16 +37,13 @@ sv:
       repository: apache/kafka
       tag: "3.7.2"
       pullPolicy: IfNotPresent
-    # -- KRaft cluster ID (required).
-    #    Generate with: docker run --rm bitnami/kafka:3.7.2 kafka-storage.sh random-uuid
-    clusterId: ""
     # -- Broker/controller node ID
     nodeId: 1
     # -- PVC size for Kafka data
     storage: 10Gi
     # -- StorageClass name; leave empty to use the cluster default
-    storageClass: ""
-    # -- Topics to create on first install/upgrade (idempotent; skips existing topics)
+    storageClass: ""    
+    clusterId: "-T-Nd9zZRx-fSI2-fRXetw"
     topics:
       - name: media.uploaded
         partitions: 3
@@ -126,7 +123,8 @@ sv:
     # -- Number of replicas
     replicas: 1
     # -- Health check path exposed by the app; must return 200 when ready
-    healthPath: /api/health
+    healthPath: /health
+    jwtStorageClass: "" # -- StorageClass for JWT keys PVC; leave empty to use cluster default
     resources:
       requests:
         cpu: 250m
@@ -151,7 +149,7 @@ sv:
         memory: 256Mi
       limits:
         cpu: "1"
-        memory: 512Mi
+        memory: 768Mi
 
   # ── Observability (opt-in) ──────────────────────────────────────────────────
   observability:

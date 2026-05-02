@@ -16,6 +16,29 @@ spec:
       labels:
         {{- include "streamvault.componentSelectorLabels" (list . "core") | nindent 8 }}
     spec:
+      # TODO: CronJob for periodic JWT key rotation, with initContainer to copy new keys to the main container on startup
+      initContainers:
+        - name: jwt-keygen
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /jwt/private.pem ]; then
+                apk add --no-cache openssl
+                openssl genrsa -out /jwt/private.pem 2048
+                openssl req -new -x509 -key /jwt/private.pem -out /jwt/cert.pem \
+                  -days 3650 -subj '/CN=streamvault'
+                chown 185:185 /jwt/private.pem /jwt/cert.pem
+                chmod 400 /jwt/private.pem
+                chmod 444 /jwt/cert.pem
+                echo 'JWT key pair generated'
+              else
+                echo 'JWT key pair already exists, skipping'
+              fi
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /jwt
       containers:
         - name: core
           image: "{{ .Values.sv.core.image.repository }}:{{ .Values.sv.core.image.tag }}"
@@ -66,10 +89,5 @@ spec:
             {{- toYaml .Values.sv.core.resources | nindent 12 }}
       volumes:
         - name: jwt-keys
-          secret:
-            secretName: {{ include "streamvault.secretName" . }}
-            items:
-              - key: jwt-private-key
-                path: private.pem
-              - key: jwt-cert
-                path: cert.pem
+          persistentVolumeClaim:
+            claimName: {{ include "streamvault.fullname" . }}-jwt-keys

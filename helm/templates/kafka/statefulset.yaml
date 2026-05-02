@@ -7,7 +7,7 @@ metadata:
     {{- include "streamvault.labels" . | nindent 4 }}
     app.kubernetes.io/component: kafka
 spec:
-  serviceName: {{ include "streamvault.fullname" . }}-kafka
+  serviceName: {{ include "streamvault.fullname" . }}-kafka-headless
   replicas: 1
   selector:
     matchLabels:
@@ -40,16 +40,21 @@ spec:
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
               value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
-              value: "{{ .Values.sv.kafka.nodeId }}@{{ include "streamvault.fullname" . }}-kafka:9093"
+              value: "{{ .Values.sv.kafka.nodeId }}@{{ include "streamvault.fullname" . }}-kafka-0.{{ include "streamvault.fullname" . }}-kafka-headless:9093"
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: "CONTROLLER"
             - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
               value: "false"
+            - name: KAFKA_LOG_DIRS
+              value: "/var/lib/kafka/data"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "1"
             - name: CLUSTER_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "streamvault.secretName" . }}
-                  key: kafka-cluster-id
+              value: "{{ .Values.sv.kafka.clusterId }}"
           livenessProbe:
             exec:
               command:
