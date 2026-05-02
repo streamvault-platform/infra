@@ -27,14 +27,13 @@ jobs:
         run: |
           helm lint ./helm \
             --set sv.postgres.password=test \
-            --set sv.redis.password=test 
-            --set sv.redis.password=test 
+            --set sv.redis.password=test
 
       - name: Lint (with observability)
         run: |
           helm lint ./helm \
             --set sv.postgres.password=test \
-            --set sv.redis.password=test \            
+            --set sv.redis.password=test \
             --set sv.observability.enabled=true \
             --set sv.observability.grafana.adminPassword=test
 
@@ -42,14 +41,14 @@ jobs:
         run: |
           helm template streamvault ./helm \
             --set sv.postgres.password=test \
-            --set sv.redis.password=test \            
+            --set sv.redis.password=test \
           | kubeconform -strict -summary
 
       - name: Validate rendered manifests (with observability)
         run: |
           helm template streamvault ./helm \
             --set sv.postgres.password=test \
-            --set sv.redis.password=test \            
+            --set sv.redis.password=test \
             --set sv.observability.enabled=true \
             --set sv.observability.grafana.adminPassword=test \
           | kubeconform -strict -summary
