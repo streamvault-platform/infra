@@ -53,8 +53,6 @@ All other services (Postgres, Kafka, Redis, Core, Pipeline) are on the internal
 helm install streamvault ./helm \
   --set sv.postgres.password=<secret> \
   --set sv.redis.password=<secret> \
-  --set sv.core.jwtSecret=<secret> \
-  --set sv.kafka.clusterId=$(python3 -c "import uuid; print(uuid.uuid4())")
 ```
 
 ### With observability

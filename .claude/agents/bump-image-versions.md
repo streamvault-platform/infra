@@ -6,12 +6,12 @@ description: Checks pinned Docker image versions in docker-compose.yml and docke
 Check whether any pinned Docker image versions in `docker-compose.yml` and `docker-compose.override.yml` have newer patch or minor releases available on Docker Hub.
 
 Images to check:
-- `postgres:16.13` — newer `16.x` patch releases
-- `apache/kafka:3.7.2` — newer `3.7.x` patch releases
-- `redis:7.2.13-alpine` — newer `7.2.x-alpine` releases
-- `envoyproxy/envoy:v1.29.12` — newer `v1.29.x` releases only (do NOT bump to v1.30+)
-- `prom/prometheus:v2.55.1` — newer `v2.x.x` releases
-- `grafana/grafana:11.6.14` — newer `11.x.x` releases
+- `postgres:18.3` — newer `18.x` patch releases
+- `apache/kafka:4.2.0` — newer `4.2.x` patch releases
+- `redis:8.6.2-alpine` — newer `8.6.x-alpine` releases
+- `envoyproxy/envoy:v1.38.0` — newer `v1.38.x` releases only (do NOT bump to v1.39+)
+- `prom/prometheus:v3.11.3` — newer `v3.x.x` releases
+- `grafana/grafana:13.0.1` — newer `13.x.x` releases
 
 For each image, use the Docker Hub API (`https://hub.docker.com/v2/repositories/<image>/tags?page_size=100`) to find the latest patch within the current minor, and the latest minor within the current major. Do NOT suggest major version bumps (e.g. postgres:17) — only patch and minor updates.
 
