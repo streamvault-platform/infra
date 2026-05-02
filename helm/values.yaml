@@ -9,7 +9,7 @@ sv:
     image:
       repository: postgres
       # -- Must stay on 16.x; do not bump major without testing migrations
-      tag: "16"
+      tag: "16.13"
       pullPolicy: IfNotPresent
     # -- Database name for the core service
     database: streamvault_core
@@ -35,10 +35,10 @@ sv:
   kafka:
     image:
       repository: apache/kafka
-      tag: "3.7.1"
+      tag: "3.7.2"
       pullPolicy: IfNotPresent
     # -- KRaft cluster ID (required).
-    #    Generate with: docker run --rm bitnami/kafka:3.7.1 kafka-storage.sh random-uuid
+    #    Generate with: docker run --rm bitnami/kafka:3.7.2 kafka-storage.sh random-uuid
     clusterId: ""
     # -- Broker/controller node ID
     nodeId: 1
@@ -78,7 +78,7 @@ sv:
   redis:
     image:
       repository: redis
-      tag: "7.2-alpine"
+      tag: "7.2.13-alpine"
       pullPolicy: IfNotPresent
     # -- Redis AUTH password (required)
     password: ""
@@ -98,7 +98,7 @@ sv:
   envoy:
     image:
       repository: envoyproxy/envoy
-      tag: "v1.29.4"
+      tag: "v1.29.12"
       pullPolicy: IfNotPresent
     # -- Number of Envoy replicas
     replicas: 1
@@ -125,8 +125,6 @@ sv:
       pullPolicy: IfNotPresent
     # -- Number of replicas
     replicas: 1
-    # -- JWT signing secret (required)
-    jwtSecret: ""
     # -- Health check path exposed by the app; must return 200 when ready
     healthPath: /api/health
     resources:
@@ -163,7 +161,7 @@ sv:
     prometheus:
       image:
         repository: prom/prometheus
-        tag: "v2.52.0"
+        tag: "v2.55.1"
         pullPolicy: IfNotPresent
       # -- TSDB retention period
       retention: 15d
@@ -182,7 +180,7 @@ sv:
     grafana:
       image:
         repository: grafana/grafana
-        tag: "11.0.0"
+        tag: "11.6.14"
         pullPolicy: IfNotPresent
       # -- Grafana admin username
       adminUser: admin
