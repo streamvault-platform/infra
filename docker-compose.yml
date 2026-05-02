@@ -132,7 +132,7 @@ services:
       start_period: 10s
 
   streamvault-core:
-    image: ${CORE_IMAGE}
+    image: ${CORE_IMAGE:-ghcr.io/streamvault-platform/core:0.1.0-dev}
     profiles: [ standard, full ]
     restart: unless-stopped
     networks: [ streamvault-net ]
