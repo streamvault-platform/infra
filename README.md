@@ -71,3 +71,10 @@ helm upgrade streamvault ./helm -f my-values.yaml
 ```
 
 Kafka topics are created automatically as a post-install/post-upgrade Job.
+
+
+### pgAdmin 4
+
+helm install pgadmin4 runix/pgadmin4 \
+  --set env.email=admin@example.com \
+  --set env.password=supersecret

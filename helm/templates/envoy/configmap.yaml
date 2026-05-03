@@ -43,19 +43,22 @@ data:
                           domains: ["*"]
                           routes:
                             - match:
-                                prefix: /ws/
+                                prefix: streamvault/ws/
                               route:
                                 cluster: streamvault_core
+                                prefix_rewrite: /ws/
                                 upgrade_configs:
                                   - upgrade_type: websocket
                             - match:
-                                prefix: /api/
+                                prefix: /streamvault/api/
                               route:
                                 cluster: streamvault_core
+                                prefix_rewrite: /api/
                             - match:
-                                prefix: /stream/
+                                prefix: streamvault/stream/
                               route:
                                 cluster: streamvault_core
+                                prefix_rewrite: /stream/
                     http_filters:
                       - name: envoy.filters.http.router
                         typed_config:
