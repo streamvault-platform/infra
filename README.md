@@ -28,7 +28,7 @@ python3 -c "import uuid; print(uuid.uuid4())"
 
 | Profile | Services | Command |
 |---------|----------|---------|
-| `standard` | Postgres, Kafka, Redis, Envoy, Core, Pipeline | `docker compose --profile standard up -d` |
+| `standard` | Postgres, Kafka, Redis, Envoy, rustfs, Core, Pipeline | `docker compose --profile standard up -d` |
 | `full` | Everything in standard + Prometheus + Grafana | `docker compose --profile full up -d` |
 
 Kafka topics are created automatically on first boot via an init container. No manual steps required.
@@ -39,8 +39,10 @@ Kafka topics are created automatically on first boot via an init container. No m
 |---------|-----------|-------|
 | Envoy HTTP | 8080 | Main ingress — all app traffic |
 | Envoy HTTPS | 8443 | TLS termination (cert not included) |
+| rustfs | 9000 | |
 | Prometheus | 9090 | `full` profile only |
 | Grafana | 3000 | `full` profile only |
+
 
 All other services (Postgres, Kafka, Redis, Core, Pipeline) are on the internal
 `streamvault-net` network and not reachable from the host.

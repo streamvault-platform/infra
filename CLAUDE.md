@@ -20,6 +20,7 @@ All infrastructure is defined here. No application code lives in this repo.
 - PostgreSQL: version 16. One named volume per service schema.
 - Envoy: static config (envoy.yaml). No xDS/dynamic config.
 - Helm: chart API version v2. Values must be documented with comments.
+- rustfs: S3 compatible in-cluster storage
 - All secrets via environment variables. No hardcoded credentials anywhere.
 - Health checks on every Docker Compose service.
 

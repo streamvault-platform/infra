@@ -34,6 +34,21 @@ spec:
               value: "postgresql://{{ .Values.sv.postgres.username }}:$(POSTGRES_PASSWORD)@{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.pipelineDatabase }}"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "{{ include "streamvault.fullname" . }}-kafka:9092"
+            - name: STREAMVAULT_S3_ENDPOINT
+              value: "http://{{ include "streamvault.fullname" . }}-rustfs:{{ .Values.sv.rustfs.port }}"
+            - name: STREAMVAULT_S3_ACCESS_KEY
+              value: {{ .Values.sv.rustfs.accessKey | quote }}
+            - name: STREAMVAULT_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: rustfs-secret-key
+            - name: STREAMVAULT_S3_BUCKET
+              value: {{ .Values.sv.rustfs.bucket | quote }}
+            - name: STREAMVAULT_S3_REGION
+              value: {{ .Values.sv.rustfs.region | quote }}
+            - name: STREAMVAULT_S3_PATH_STYLE
+              value: "true"
           livenessProbe:
             httpGet:
               path: {{ .Values.sv.pipeline.healthPath }}

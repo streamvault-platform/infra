@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "streamvault.fullname" . }}-rustfs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rustfs
+spec:
+  serviceName: {{ include "streamvault.fullname" . }}-rustfs
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "rustfs") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "rustfs") | nindent 8 }}
+    spec:
+      containers:
+        - name: rustfs
+          image: "{{ .Values.sv.rustfs.image.repository }}:{{ .Values.sv.rustfs.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.rustfs.image.pullPolicy }}
+          ports:
+            - name: s3
+              containerPort: {{ .Values.sv.rustfs.port }}
+              protocol: TCP
+            - name: console
+              containerPort: {{ .Values.sv.rustfs.consolePort }}
+              protocol: TCP
+          env:
+            - name: RUSTFS_ACCESS_KEY
+              value: {{ .Values.sv.rustfs.accessKey | quote }}
+            - name: RUSTFS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: rustfs-secret-key
+            - name: RUSTFS_VOLUMES
+              value: /data
+            - name: RUSTFS_ADDRESS
+              value: ":{{ .Values.sv.rustfs.port }}"
+            - name: RUSTFS_CONSOLE_ADDRESS
+              value: ":{{ .Values.sv.rustfs.consolePort }}"
+            - name: RUSTFS_CONSOLE_ENABLE
+              value: "true"
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.sv.rustfs.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.sv.rustfs.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.rustfs.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.sv.rustfs.storageClass }}
+        storageClassName: {{ .Values.sv.rustfs.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.sv.rustfs.storage }}

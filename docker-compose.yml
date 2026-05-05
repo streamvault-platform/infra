@@ -8,6 +8,7 @@ volumes:
   kafka_data:
   redis_data:
   jwt_keys:
+  rustfs_data:
 
 services:
 
@@ -113,6 +114,29 @@ services:
       retries: 5
       start_period: 10s
 
+  streamvault-rustfs:
+    image: rustfs/rustfs:1.0.0-beta.1
+    profiles: [ standard, full ]
+    restart: unless-stopped
+    networks: [ streamvault-net ]
+    ports:
+      - "${RUSTFS_PORT:-9000}:9000"
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-rustfsadmin}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:?RUSTFS_SECRET_KEY is required}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    volumes:
+      - rustfs_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9000'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   streamvault-envoy:
     image: envoyproxy/envoy:v1.38.0
     profiles: [ standard, full ]
@@ -146,6 +170,8 @@ services:
         condition: service_healthy
       streamvault-jwt-init:
         condition: service_completed_successfully
+      streamvault-rustfs:
+        condition: service_healthy
     volumes:
       - jwt_keys:/jwt:ro
     # TODO: might get rid of quarkus prefix, user streamvault namespace in env vars (also check helm)
@@ -157,6 +183,13 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: streamvault-kafka:9092
       STREAMVAULT_AUTH_JWT_PRIVATE_KEY_LOCATION: /jwt/private.pem
       STREAMVAULT_AUTH_JWT_PUBLIC_KEY_LOCATION: /jwt/cert.pem
+      STREAMVAULT_S3_ENDPOINT: http://streamvault-rustfs:9000
+      STREAMVAULT_S3_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-rustfsadmin}
+      STREAMVAULT_S3_SECRET_KEY: ${RUSTFS_SECRET_KEY:?RUSTFS_SECRET_KEY is required}
+      STREAMVAULT_S3_BUCKET: ${STREAMVAULT_S3_BUCKET:-streamvault-media}
+      STREAMVAULT_S3_REGION: ${STREAMVAULT_S3_REGION:-us-east-1}
+      STREAMVAULT_S3_PATH_STYLE: "true"
+      STREAMVAULT_STORAGE_BACKEND: ${STREAMVAULT_STORAGE_BACKEND:-s3}
 
   streamvault-pipeline:
     image: ${PIPELINE_IMAGE:-busybox:1.36}
@@ -169,6 +202,15 @@ services:
         condition: service_healthy
       streamvault-kafka:
         condition: service_healthy
+      streamvault-rustfs:
+        condition: service_healthy
     environment:
       DB_URL: postgresql://${POSTGRES_USER:-streamvault}:${POSTGRES_PASSWORD}@streamvault-postgres:5432/${POSTGRES_PIPELINE_DB:-streamvault_pipeline}
       KAFKA_BOOTSTRAP_SERVERS: streamvault-kafka:9092
+      STREAMVAULT_S3_ENDPOINT: http://streamvault-rustfs:9000
+      STREAMVAULT_S3_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-rustfsadmin}
+      STREAMVAULT_S3_SECRET_KEY: ${RUSTFS_SECRET_KEY:?RUSTFS_SECRET_KEY is required}
+      STREAMVAULT_S3_BUCKET: ${STREAMVAULT_S3_BUCKET:-streamvault-media}
+      STREAMVAULT_S3_REGION: ${STREAMVAULT_S3_REGION:-us-east-1}
+      STREAMVAULT_S3_PATH_STYLE: "true"
+      STREAMVAULT_STORAGE_BACKEND: s3

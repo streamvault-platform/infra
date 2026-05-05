@@ -16,8 +16,8 @@ sv:
     pipelineDatabase: streamvault_pipeline
     # -- PostgreSQL superuser username
     username: streamvault
-    # -- PostgreSQL password (required)
-    password: ""
+    # -- PostgreSQL password
+    password: "changeme"
     # -- PVC size for the postgres data directory
     storage: 10Gi
     # -- StorageClass name; leave empty to use the cluster default
@@ -76,8 +76,8 @@ sv:
       repository: redis
       tag: "8.6.2-alpine"
       pullPolicy: IfNotPresent
-    # -- Redis AUTH password (required)
-    password: ""
+    # -- Redis AUTH password
+    password: "changeme"
     # -- PVC size for Redis AOF/RDB data
     storage: 2Gi
     # -- StorageClass name; leave empty to use the cluster default
@@ -123,6 +123,8 @@ sv:
     replicas: 1
     # -- Health check path exposed by the app; must return 200 when ready
     healthPath: /health
+    # -- Storage backend for media files. Options: s3 | filesystem
+    storageBackend: s3
     jwtStorageClass: "" # -- StorageClass for JWT keys PVC; leave empty to use cluster default
     resources:
       requests:
@@ -149,6 +151,36 @@ sv:
       limits:
         cpu: "1"
         memory: 768Mi
+
+  # ── RustFS (S3-compatible object storage) ──────────────────────────────────
+  rustfs:
+    image:
+      repository: rustfs/rustfs
+      tag: "1.0.0-beta.1"
+      pullPolicy: IfNotPresent
+    # -- S3 API port
+    port: 9000
+    # -- Web console port
+    consolePort: 9001
+    # -- S3 API access key (username)
+    accessKey: "rustfsadmin"
+    # -- S3 API secret key (password)
+    secretKey: "changeme"
+    # -- Default bucket created for media storage
+    bucket: streamvault-media
+    # -- S3 region reported to clients
+    region: us-east-1
+    # -- PVC size for rustfs data directory
+    storage: 50Gi
+    # -- StorageClass name; leave empty to use the cluster default
+    storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
 
   # ── Observability (opt-in) ──────────────────────────────────────────────────
   observability:
