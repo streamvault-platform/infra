@@ -65,6 +65,23 @@ spec:
               value: /jwt/private.pem
             - name: STREAMVAULT_AUTH_JWT_PUBLIC_KEY_LOCATION
               value: /jwt/cert.pem
+            - name: STREAMVAULT_S3_ENDPOINT
+              value: "http://{{ include "streamvault.fullname" . }}-rustfs:{{ .Values.sv.rustfs.port }}"
+            - name: STREAMVAULT_S3_ACCESS_KEY
+              value: {{ .Values.sv.rustfs.accessKey | quote }}
+            - name: STREAMVAULT_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: rustfs-secret-key
+            - name: STREAMVAULT_S3_BUCKET
+              value: {{ .Values.sv.rustfs.bucket | quote }}
+            - name: STREAMVAULT_S3_REGION
+              value: {{ .Values.sv.rustfs.region | quote }}
+            - name: STREAMVAULT_S3_PATH_STYLE
+              value: "true"
+            - name: STREAMVAULT_STORAGE_BACKEND
+              value: {{ .Values.sv.core.storageBackend | quote }}
           volumeMounts:
             - name: jwt-keys
               mountPath: /jwt
