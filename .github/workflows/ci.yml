@@ -66,6 +66,7 @@ jobs:
             echo "REDIS_PASSWORD=cipassword"            
             echo "KAFKA_CLUSTER_ID=$(python3 -c 'import uuid; print(uuid.uuid4())')"
             echo "GF_SECURITY_ADMIN_PASSWORD=cipassword"
+            echo "RUSTFS_SECRET_KEY=changeme"
           } > .env
 
       - name: Validate standard profile
