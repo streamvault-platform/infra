@@ -7,13 +7,11 @@ sv:
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image:
-      repository: postgres      
+      repository: postgres
       tag: "18.3"
       pullPolicy: IfNotPresent
     # -- Database name for the core service
     database: streamvault_core
-    # -- Database name for the pipeline service
-    pipelineDatabase: streamvault_pipeline
     # -- PostgreSQL superuser username
     username: streamvault
     # -- PostgreSQL password
@@ -41,7 +39,7 @@ sv:
     # -- PVC size for Kafka data
     storage: 10Gi
     # -- StorageClass name; leave empty to use the cluster default
-    storageClass: ""    
+    storageClass: ""
     clusterId: "-T-Nd9zZRx-fSI2-fRXetw"
     topics:
       - name: media.uploaded
@@ -116,9 +114,13 @@ sv:
   # ── Core service ────────────────────────────────────────────────────────────
   core:
     image:
-      repository: ghcr.io/streamvault-platform/core
-      tag: "0.1.0-dev"
-      pullPolicy: IfNotPresent
+      repository: streamvault-core
+      tag: local2
+      pullPolicy: Never
+    # image:
+    #   repository: ghcr.io/streamvault-platform/core
+    #   tag: "0.1.0-dev"
+    #   pullPolicy: Always # TODO: change if tags change to stable releases
     # -- Number of replicas
     replicas: 1
     # -- Health check path exposed by the app; must return 200 when ready
@@ -137,13 +139,19 @@ sv:
   # ── Pipeline service ────────────────────────────────────────────────────────
   pipeline:
     image:
-      repository: ghcr.io/streamvault/pipeline
-      tag: "0.1.0"
-      pullPolicy: IfNotPresent
+      repository: ghcr.io/streamvault-platform/pipeline
+      tag: "0.1.0-dev"
+      pullPolicy: Always # TODO: change if tags change to stable releases
     # -- Number of replicas
     replicas: 1
+    # -- HTTP port the JVM listens on (injected as SERVER_PORT)
+    port: 8080
     # -- Health check path exposed by the app; must return 200 when ready
     healthPath: /health
+    # -- Kafka consumer group ID
+    consumerGroup: "streamvault-pipeline"
+    # -- Prometheus scrape interval for metrics endpoint
+    metricsInterval: "15 seconds"
     resources:
       requests:
         cpu: 250m

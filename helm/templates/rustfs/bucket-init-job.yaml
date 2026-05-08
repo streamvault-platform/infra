@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "streamvault.fullname" . }}-rustfs-bucket-init
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rustfs-bucket-init
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "rustfs-bucket-init") | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bucket-init
+          image: amazon/aws-cli:2.27.17
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ .Values.sv.rustfs.accessKey | quote }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: rustfs-secret-key
+            - name: AWS_DEFAULT_REGION
+              value: {{ .Values.sv.rustfs.region | quote }}
+            - name: S3_ENDPOINT
+              value: "http://{{ include "streamvault.fullname" . }}-rustfs:{{ .Values.sv.rustfs.port }}"
+            - name: S3_BUCKET
+              value: {{ .Values.sv.rustfs.bucket | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              until aws --endpoint-url "$S3_ENDPOINT" s3api head-bucket --bucket "$S3_BUCKET" 2>/dev/null \
+                || aws --endpoint-url "$S3_ENDPOINT" s3api create-bucket --bucket "$S3_BUCKET"; do
+                echo "Waiting for RustFS or bucket creation, retrying in 3s..."
+                sleep 3
+              done
+              echo "Bucket $S3_BUCKET ready."
