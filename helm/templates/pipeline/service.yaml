@@ -10,7 +10,7 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 8081
+      port: {{ .Values.sv.pipeline.port }}
       targetPort: http
       protocol: TCP
   selector:

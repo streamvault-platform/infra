@@ -22,33 +22,17 @@ spec:
           imagePullPolicy: {{ .Values.sv.pipeline.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 8081
+              containerPort: {{ .Values.sv.pipeline.port }}
               protocol: TCP
           env:
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "streamvault.secretName" . }}
-                  key: postgres-password
-            - name: DB_URL
-              value: "postgresql://{{ .Values.sv.postgres.username }}:$(POSTGRES_PASSWORD)@{{ include "streamvault.fullname" . }}-postgres:5432/{{ .Values.sv.postgres.pipelineDatabase }}"
+            - name: SERVER_PORT
+              value: {{ .Values.sv.pipeline.port | quote }}
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "{{ include "streamvault.fullname" . }}-kafka:9092"
-            - name: STREAMVAULT_S3_ENDPOINT
-              value: "http://{{ include "streamvault.fullname" . }}-rustfs:{{ .Values.sv.rustfs.port }}"
-            - name: STREAMVAULT_S3_ACCESS_KEY
-              value: {{ .Values.sv.rustfs.accessKey | quote }}
-            - name: STREAMVAULT_S3_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "streamvault.secretName" . }}
-                  key: rustfs-secret-key
-            - name: STREAMVAULT_S3_BUCKET
-              value: {{ .Values.sv.rustfs.bucket | quote }}
-            - name: STREAMVAULT_S3_REGION
-              value: {{ .Values.sv.rustfs.region | quote }}
-            - name: STREAMVAULT_S3_PATH_STYLE
-              value: "true"
+            - name: KAFKA_CONSUMER_GROUP
+              value: {{ .Values.sv.pipeline.consumerGroup | quote }}
+            - name: METRICS_INTERVAL
+              value: {{ .Values.sv.pipeline.metricsInterval | quote }}
           livenessProbe:
             httpGet:
               path: {{ .Values.sv.pipeline.healthPath }}

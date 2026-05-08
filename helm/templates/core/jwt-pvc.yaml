@@ -10,6 +10,8 @@ metadata:
   labels:
     {{- include "streamvault.labels" . | nindent 4 }}
     app.kubernetes.io/component: core
+  annotations:
+    helm.sh/resource-policy: keep
 spec:
   accessModes:
     - ReadWriteOnce
