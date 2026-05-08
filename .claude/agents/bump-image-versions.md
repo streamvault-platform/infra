@@ -12,8 +12,14 @@ Images to check:
 - `envoyproxy/envoy:v1.38.0` — newer `v1.38.x` releases only (do NOT bump to v1.39+)
 - `prom/prometheus:v3.11.3` — newer `v3.x.x` releases
 - `grafana/grafana:13.0.1` — newer `13.x.x` releases
+- `provectuslabs/kafka-ui:v0.7.2` — newer `v0.x.x` releases
 
-For each image, use the Docker Hub API (`https://hub.docker.com/v2/repositories/<image>/tags?page_size=100`) to find the latest patch within the current minor, and the latest minor within the current major. Do NOT suggest major version bumps (e.g. postgres:17) — only patch and minor updates.
+Do NOT check `ghcr.io/streamvault-platform/core` or `ghcr.io/streamvault-platform/pipeline` — app images versioned separately.
+Do NOT check `rustfs/rustfs` — pre-1.0 beta; pin manually when stable releases exist.
+Do NOT check `minio/mc` or `alpine` init container images — update those manually alongside their parent services.
+Do NOT suggest major version bumps — only patch and minor updates.
+
+For each image, use the Docker Hub API (`https://hub.docker.com/v2/repositories/<image>/tags?page_size=100`) to find the latest patch within the current minor, and the latest minor within the current major.
 
 If any updates are found:
 1. Create a new branch `chore/bump-image-versions-<YYYY-MM-DD>`
