@@ -207,9 +207,12 @@ services:
       STREAMVAULT_S3_REGION: ${STREAMVAULT_S3_REGION:-us-east-1}
       STREAMVAULT_S3_PATH_STYLE: "true"
       STREAMVAULT_STORAGE_BACKEND: ${STREAMVAULT_STORAGE_BACKEND:-s3}
+      STREAMVAULT_MEDIA_PATH: ${STREAMVAULT_MEDIA_PATH:-/var/streamvault/media}
+      STREAMVAULT_INTERNAL_BASE_URL: ${STREAMVAULT_INTERNAL_BASE_URL:-http://streamvault-core:8080}
+      STREAMVAULT_INTERNAL_SIGNING_SECRET: ${STREAMVAULT_INTERNAL_SIGNING_SECRET:-}
 
   streamvault-pipeline:
-    image: ${PIPELINE_IMAGE:-ghcr.io/streamvault-app/pipeline:latest}
+    image: ${PIPELINE_IMAGE:-ghcr.io/streamvault-platform/pipeline:0.1.0-dev}
     profiles: [ standard, full ]
     restart: unless-stopped
     networks: [ streamvault-net ]

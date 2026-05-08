@@ -1,4 +1,4 @@
-{{- if .Values.sv.kafkaUi.enabled }}
+{{- if .Values.sv.observability.kafkaUi.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: kafka-ui
-          image: "{{ .Values.sv.kafkaUi.image.repository }}:{{ .Values.sv.kafkaUi.image.tag }}"
-          imagePullPolicy: {{ .Values.sv.kafkaUi.image.pullPolicy }}
+          image: "{{ .Values.sv.observability.kafkaUi.image.repository }}:{{ .Values.sv.observability.kafkaUi.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.observability.kafkaUi.image.pullPolicy }}
           ports:
             - name: http
               containerPort: 8080
@@ -47,5 +47,5 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
           resources:
-            {{- toYaml .Values.sv.kafkaUi.resources | nindent 12 }}
+            {{- toYaml .Values.sv.observability.kafkaUi.resources | nindent 12 }}
 {{- end }}

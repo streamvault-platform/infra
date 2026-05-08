@@ -1,4 +1,4 @@
-{{- if .Values.sv.kafkaUi.enabled }}
+{{- if .Values.sv.observability.kafkaUi.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,10 +8,10 @@ metadata:
     {{- include "streamvault.labels" . | nindent 4 }}
     app.kubernetes.io/component: kafka-ui
 spec:
-  type: {{ .Values.sv.kafkaUi.service.type }}
+  type: {{ .Values.sv.observability.kafkaUi.service.type }}
   ports:
     - name: http
-      port: {{ .Values.sv.kafkaUi.service.port }}
+      port: {{ .Values.sv.observability.kafkaUi.service.port }}
       targetPort: http
       protocol: TCP
   selector:

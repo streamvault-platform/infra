@@ -19,7 +19,7 @@ spec:
       # TODO: CronJob for periodic JWT key rotation, with initContainer to copy new keys to the main container on startup
       initContainers:
         - name: jwt-keygen
-          image: alpine:3.19
+          image: alpine:3.20
           command:
             - sh
             - -c
@@ -86,6 +86,13 @@ spec:
               value: {{ .Values.sv.core.mediaPath | default "/var/streamvault/media" | quote }}
             - name: STREAMVAULT_INTERNAL_BASE_URL
               value: "http://{{ include "streamvault.fullname" . }}-core:8080"
+            {{- if eq .Values.sv.core.storageBackend "filesystem" }}
+            - name: STREAMVAULT_INTERNAL_SIGNING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: internal-signing-secret
+            {{- end }}
           volumeMounts:
             - name: jwt-keys
               mountPath: /jwt

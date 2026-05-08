@@ -123,6 +123,8 @@ sv:
     healthPath: /health
     # -- Storage backend for media files. Options: s3 | filesystem
     storageBackend: s3
+    # -- Required when storageBackend=filesystem: HMAC key for signing internal pre-signed URLs
+    internalSigningSecret: ""
     jwtStorageClass: "" # -- StorageClass for JWT keys PVC; leave empty to use cluster default
     # -- PVC size for media files (filesystem backend only)
     mediaStorage: 20Gi
@@ -236,7 +238,7 @@ sv:
     grafana:
       image:
         repository: grafana/grafana
-        tag: "11.6.14"
+        tag: "13.0.1"
         pullPolicy: IfNotPresent
       # -- Grafana admin username
       adminUser: admin

@@ -12,8 +12,10 @@ Images to check (field path → current tag):
 - `sv.envoy.image.tag` = `"v1.38.0"` — newer `v1.38.x` releases only (do NOT bump to v1.39+)
 - `sv.observability.prometheus.image.tag` = `"v3.11.3"` — newer `v3.x.x` releases (repository: `prom/prometheus`)
 - `sv.observability.grafana.image.tag` = `"13.0.1"` — newer `13.x.x` releases (repository: `grafana/grafana`)
+- `sv.observability.kafkaUi.image.tag` = `"v0.7.2"` — newer `v0.x.x` releases (repository: `provectuslabs/kafka-ui`)
 
 Do NOT check `sv.core.image.tag` or `sv.pipeline.image.tag` — those are app images versioned separately.
+Do NOT check `sv.rustfs.image.tag` — RustFS is pre-1.0 beta; pin manually when stable releases exist.
 Do NOT suggest major version bumps — only patch and minor updates.
 
 For each image, use the Docker Hub API (`https://hub.docker.com/v2/repositories/<repo>/tags?page_size=100`) to find the latest applicable version.
