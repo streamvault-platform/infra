@@ -114,13 +114,9 @@ sv:
   # ── Core service ────────────────────────────────────────────────────────────
   core:
     image:
-      repository: streamvault-core
-      tag: local2
-      pullPolicy: Never
-    # image:
-    #   repository: ghcr.io/streamvault-platform/core
-    #   tag: "0.1.0-dev"
-    #   pullPolicy: Always # TODO: change if tags change to stable releases
+      repository: ghcr.io/streamvault-platform/core
+      tag: "0.1.0-dev"
+      pullPolicy: Always # TODO: change if tags change to stable releases
     # -- Number of replicas
     replicas: 1
     # -- Health check path exposed by the app; must return 200 when ready
@@ -128,6 +124,10 @@ sv:
     # -- Storage backend for media files. Options: s3 | filesystem
     storageBackend: s3
     jwtStorageClass: "" # -- StorageClass for JWT keys PVC; leave empty to use cluster default
+    # -- PVC size for media files (filesystem backend only)
+    mediaStorage: 20Gi
+    # -- StorageClass for media PVC; leave empty to use cluster default
+    mediaStorageClass: ""
     resources:
       requests:
         cpu: 250m
@@ -213,6 +213,25 @@ sv:
         limits:
           cpu: "1"
           memory: 2Gi
+
+    kafkaUi:
+      # -- Set to true to deploy Kafka UI alongside the platform
+      enabled: false
+      image:
+        repository: provectuslabs/kafka-ui
+        tag: "v0.7.2"
+        pullPolicy: IfNotPresent
+      service:
+        # -- Service type for Kafka UI access
+        type: ClusterIP
+        port: 8080
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
 
     grafana:
       image:

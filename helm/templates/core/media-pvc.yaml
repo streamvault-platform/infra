@@ -1,0 +1,21 @@
+{{- if eq .Values.sv.core.storageBackend "filesystem" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "streamvault.fullname" . }}-media
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.sv.core.mediaStorageClass }}
+  storageClassName: {{ .Values.sv.core.mediaStorageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.sv.core.mediaStorage | default "20Gi" }}
+{{- end }}

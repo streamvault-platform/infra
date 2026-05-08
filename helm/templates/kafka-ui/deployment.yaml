@@ -1,0 +1,51 @@
+{{- if .Values.sv.kafkaUi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamvault.fullname" . }}-kafka-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "kafka-ui") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "kafka-ui") | nindent 8 }}
+    spec:
+      containers:
+        - name: kafka-ui
+          image: "{{ .Values.sv.kafkaUi.image.repository }}:{{ .Values.sv.kafkaUi.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.kafkaUi.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: streamvault
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: {{ include "streamvault.fullname" . }}-kafka:9092
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.kafkaUi.resources | nindent 12 }}
+{{- end }}

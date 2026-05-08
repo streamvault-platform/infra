@@ -1,0 +1,19 @@
+{{- if .Values.sv.kafkaUi.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamvault.fullname" . }}-kafka-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka-ui
+spec:
+  type: {{ .Values.sv.kafkaUi.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.sv.kafkaUi.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "streamvault.componentSelectorLabels" (list . "kafka-ui") | nindent 4 }}
+{{- end }}

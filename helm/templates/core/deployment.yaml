@@ -82,10 +82,18 @@ spec:
               value: "true"
             - name: STREAMVAULT_STORAGE_BACKEND
               value: {{ .Values.sv.core.storageBackend | quote }}
+            - name: STREAMVAULT_MEDIA_PATH
+              value: {{ .Values.sv.core.mediaPath | default "/var/streamvault/media" | quote }}
+            - name: STREAMVAULT_INTERNAL_BASE_URL
+              value: "http://{{ include "streamvault.fullname" . }}-core:8080"
           volumeMounts:
             - name: jwt-keys
               mountPath: /jwt
               readOnly: true
+            {{- if eq .Values.sv.core.storageBackend "filesystem" }}
+            - name: media
+              mountPath: {{ .Values.sv.core.mediaPath | default "/var/streamvault/media" }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: {{ .Values.sv.core.healthPath }}
@@ -108,3 +116,8 @@ spec:
         - name: jwt-keys
           persistentVolumeClaim:
             claimName: {{ include "streamvault.fullname" . }}-jwt-keys
+        {{- if eq .Values.sv.core.storageBackend "filesystem" }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ include "streamvault.fullname" . }}-media
+        {{- end }}
