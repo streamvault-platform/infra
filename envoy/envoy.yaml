@@ -33,19 +33,19 @@ static_resources:
                       domains: ["*"]
                       routes:
                         - match:
-                            prefix: streamvault/ws/
+                            prefix: /ws/
                           route:
                             cluster: streamvault_core
                             prefix_rewrite: /ws/
                             upgrade_configs:
                               - upgrade_type: websocket
                         - match:
-                            prefix: streamvault/api/
+                            prefix: /api/
                           route:
                             cluster: streamvault_core
                             prefix_rewrite: /api/
                         - match:
-                            prefix: streamvault/stream/
+                            prefix: /stream/
                           route:
                             cluster: streamvault_core
                             prefix_rewrite: /stream/

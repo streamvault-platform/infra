@@ -124,7 +124,7 @@ sv:
     # -- Storage backend for media files. Options: s3 | filesystem
     storageBackend: s3
     # -- Required when storageBackend=filesystem: HMAC key for signing internal pre-signed URLs
-    internalSigningSecret: ""
+    internalSigningSecret: "secretkey"
     jwtStorageClass: "" # -- StorageClass for JWT keys PVC; leave empty to use cluster default
     # -- PVC size for media files (filesystem backend only)
     mediaStorage: 20Gi
