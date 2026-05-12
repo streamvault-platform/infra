@@ -93,6 +93,13 @@ spec:
                   name: {{ include "streamvault.secretName" . }}
                   key: internal-signing-secret
             {{- end }}
+            - name: QUARKUS_REDIS_HOSTS
+              value: "redis://{{ include "streamvault.fullname" . }}-redis:6379"
+            - name: QUARKUS_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: redis-password
           volumeMounts:
             - name: jwt-keys
               mountPath: /jwt

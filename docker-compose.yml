@@ -210,6 +210,8 @@ services:
       STREAMVAULT_MEDIA_PATH: ${STREAMVAULT_MEDIA_PATH:-/var/streamvault/media}
       STREAMVAULT_INTERNAL_BASE_URL: ${STREAMVAULT_INTERNAL_BASE_URL:-http://streamvault-core:8080}
       STREAMVAULT_INTERNAL_SIGNING_SECRET: ${STREAMVAULT_INTERNAL_SIGNING_SECRET:-}
+      QUARKUS_REDIS_HOSTS: redis://streamvault-redis:6379
+      QUARKUS_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
 
   streamvault-pipeline:
     image: ${PIPELINE_IMAGE:-ghcr.io/streamvault-platform/pipeline:0.1.0-dev}
