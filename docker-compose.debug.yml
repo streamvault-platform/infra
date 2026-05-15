@@ -1,0 +1,36 @@
+# Debug overlay — enables JDWP on core and builds both services from local source.
+#
+# Prerequisites (JAR must exist before docker compose build):
+#   ../core/mvnw -f ../core/pom.xml package -DskipTests
+#   (cd ../pipeline && sbt assembly)
+#
+# Usage:
+#   cp .env.debug.example .env   # first time only
+#   docker compose --profile standard \
+#     -f docker-compose.yml \
+#     -f docker-compose.override.yml \
+#     -f docker-compose.debug.yml \
+#     build
+#   docker compose --profile standard \
+#     -f docker-compose.yml \
+#     -f docker-compose.override.yml \
+#     -f docker-compose.debug.yml \
+#     up -d
+#
+# Attach your IDE remote debugger to localhost:5005 (suspend=n).
+
+services:
+  streamvault-core:
+    build:
+      context: ../core
+      dockerfile: src/main/docker/Dockerfile.jvm
+    ports:
+      - "${DEBUG_PORT:-5005}:5005"
+    environment:
+      JAVA_DEBUG: "true"
+      JAVA_DEBUG_PORT: "*:5005"
+
+  streamvault-pipeline:
+    build:
+      context: ../pipeline
+      dockerfile: Dockerfile

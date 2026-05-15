@@ -130,7 +130,7 @@ services:
     volumes:
       - rustfs_data:/data
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9000'" ]
+      test: [ "CMD-SHELL", "nc -z -w 1 localhost 9000" ]
       interval: 10s
       timeout: 5s
       retries: 5
