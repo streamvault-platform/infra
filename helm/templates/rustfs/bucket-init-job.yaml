@@ -28,7 +28,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "streamvault.secretName" . }}
-                  key: rustfs-secret-key
+                  key: secret-key
             - name: AWS_DEFAULT_REGION
               value: {{ .Values.sv.rustfs.region | quote }}
             - name: S3_ENDPOINT

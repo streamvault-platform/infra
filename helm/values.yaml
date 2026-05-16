@@ -4,6 +4,11 @@ nameOverride: ""
 fullnameOverride: ""
 
 sv:
+  # -- Shared secret key used for: RustFS password, S3 secret, and filesystem HMAC signing.
+  # Leave empty to auto-generate on first install (recommended).
+  # Override sv.core.externalS3.secretKey separately if using external S3 with its own credentials.
+  secretKey: ""
+
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image:
@@ -14,8 +19,9 @@ sv:
     database: streamvault_core
     # -- PostgreSQL superuser username
     username: streamvault
-    # -- PostgreSQL password
-    password: "changeme"
+    # -- PostgreSQL password; leave empty to auto-generate on first install.
+    # Retrieve with: kubectl get secret <release>-streamvault-secrets -o jsonpath='{.data.postgres-password}' | base64 -d
+    password: ""
     # -- PVC size for the postgres data directory
     storage: 10Gi
     # -- StorageClass name; leave empty to use the cluster default
@@ -74,8 +80,8 @@ sv:
       repository: redis
       tag: "8.6.2-alpine"
       pullPolicy: IfNotPresent
-    # -- Redis AUTH password
-    password: "changeme"
+    # -- Redis AUTH password; leave empty to auto-generate on first install.
+    password: ""
     # -- PVC size for Redis AOF/RDB data
     storage: 2Gi
     # -- StorageClass name; leave empty to use the cluster default
@@ -123,13 +129,22 @@ sv:
     healthPath: /health
     # -- Storage backend for media files. Options: s3 | filesystem
     storageBackend: s3
-    # -- Required when storageBackend=filesystem: HMAC key for signing internal pre-signed URLs
-    internalSigningSecret: "secretkey"
     jwtStorageClass: "" # -- StorageClass for JWT keys PVC; leave empty to use cluster default
     # -- PVC size for media files (filesystem backend only)
     mediaStorage: 20Gi
     # -- StorageClass for media PVC; leave empty to use cluster default
     mediaStorageClass: ""
+    # -- External S3 (AWS S3, Backblaze B2, etc.) — leave disabled to use embedded RustFS
+    externalS3:
+      enabled: false
+      # -- S3 endpoint override; leave empty for real AWS S3, set for other S3-compatible services
+      endpoint: ""
+      # -- Access key; leave empty to use IRSA / instance profile on EKS
+      accessKey: ""
+      # -- Secret key; leave empty to use IRSA / instance profile on EKS
+      secretKey: ""
+      bucket: "streamvault-media"
+      region: "us-east-1"
     resources:
       requests:
         cpu: 250m
@@ -174,8 +189,8 @@ sv:
     consolePort: 9001
     # -- S3 API access key (username)
     accessKey: "rustfsadmin"
-    # -- S3 API secret key (password)
-    secretKey: "changeme"
+    # -- S3 API secret key (password); leave empty — driven by sv.secretKey.
+    secretKey: ""
     # -- Default bucket created for media storage
     bucket: streamvault-media
     # -- S3 region reported to clients

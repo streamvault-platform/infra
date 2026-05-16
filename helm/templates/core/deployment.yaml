@@ -65,6 +65,29 @@ spec:
               value: /jwt/private.pem
             - name: STREAMVAULT_AUTH_JWT_PUBLIC_KEY_LOCATION
               value: /jwt/cert.pem
+            {{- if .Values.sv.core.externalS3.enabled }}
+            {{- if .Values.sv.core.externalS3.endpoint }}
+            - name: STREAMVAULT_S3_ENDPOINT
+              value: {{ .Values.sv.core.externalS3.endpoint | quote }}
+            {{- end }}
+            {{- if .Values.sv.core.externalS3.accessKey }}
+            - name: STREAMVAULT_S3_ACCESS_KEY
+              value: {{ .Values.sv.core.externalS3.accessKey | quote }}
+            - name: STREAMVAULT_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  {{- if .Values.sv.core.externalS3.secretKey }}
+                  key: external-s3-secret-key
+                  {{- else }}
+                  key: secret-key
+                  {{- end }}
+            {{- end }}
+            - name: STREAMVAULT_S3_BUCKET
+              value: {{ .Values.sv.core.externalS3.bucket | quote }}
+            - name: STREAMVAULT_S3_REGION
+              value: {{ .Values.sv.core.externalS3.region | quote }}
+            {{- else }}
             - name: STREAMVAULT_S3_ENDPOINT
               value: "http://{{ include "streamvault.fullname" . }}-rustfs:{{ .Values.sv.rustfs.port }}"
             - name: STREAMVAULT_S3_ACCESS_KEY
@@ -73,26 +96,23 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "streamvault.secretName" . }}
-                  key: rustfs-secret-key
+                  key: secret-key
             - name: STREAMVAULT_S3_BUCKET
               value: {{ .Values.sv.rustfs.bucket | quote }}
             - name: STREAMVAULT_S3_REGION
               value: {{ .Values.sv.rustfs.region | quote }}
-            - name: STREAMVAULT_S3_PATH_STYLE
-              value: "true"
+            {{- end }}
             - name: STREAMVAULT_STORAGE_BACKEND
               value: {{ .Values.sv.core.storageBackend | quote }}
             - name: STREAMVAULT_MEDIA_PATH
               value: {{ .Values.sv.core.mediaPath | default "/var/streamvault/media" | quote }}
             - name: STREAMVAULT_INTERNAL_BASE_URL
               value: "http://{{ include "streamvault.fullname" . }}-core:8080"
-            {{- if eq .Values.sv.core.storageBackend "filesystem" }}
             - name: STREAMVAULT_INTERNAL_SIGNING_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ include "streamvault.secretName" . }}
-                  key: internal-signing-secret
-            {{- end }}
+                  key: secret-key
             - name: QUARKUS_REDIS_HOSTS
               value: "redis://{{ include "streamvault.fullname" . }}-redis:6379"
             - name: QUARKUS_REDIS_PASSWORD

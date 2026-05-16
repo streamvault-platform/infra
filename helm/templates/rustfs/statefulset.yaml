@@ -35,7 +35,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "streamvault.secretName" . }}
-                  key: rustfs-secret-key
+                  key: secret-key
             - name: RUSTFS_VOLUMES
               value: /data
             - name: RUSTFS_ADDRESS

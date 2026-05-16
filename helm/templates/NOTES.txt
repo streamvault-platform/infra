@@ -1,0 +1,32 @@
+Streamvault has been deployed.
+
+{{- if .Values.sv.envoy.service.type | eq "LoadBalancer" }}
+
+Get the external IP:
+  kubectl get svc {{ include "streamvault.fullname" . }}-envoy -n {{ .Release.Namespace }}
+{{- end }}
+
+Retrieve auto-generated secrets:
+  # PostgreSQL password
+  kubectl get secret {{ include "streamvault.secretName" . }} -n {{ .Release.Namespace }} \
+    -o jsonpath='{.data.postgres-password}' | base64 -d
+
+  # Redis password
+  kubectl get secret {{ include "streamvault.secretName" . }} -n {{ .Release.Namespace }} \
+    -o jsonpath='{.data.redis-password}' | base64 -d
+
+  # Shared secret key (RustFS, S3, filesystem signing)
+  kubectl get secret {{ include "streamvault.secretName" . }} -n {{ .Release.Namespace }} \
+    -o jsonpath='{.data.secret-key}' | base64 -d
+{{- if .Values.sv.observability.enabled }}
+
+  # Grafana admin password
+  kubectl get secret {{ include "streamvault.secretName" . }} -n {{ .Release.Namespace }} \
+    -o jsonpath='{.data.grafana-admin-password}' | base64 -d
+{{- end }}
+
+To pin these values for future upgrades (recommended):
+  helm upgrade streamvault ... \
+    --set sv.postgres.password=$(kubectl get secret {{ include "streamvault.secretName" . }} -n {{ .Release.Namespace }} -o jsonpath='{.data.postgres-password}' | base64 -d) \
+    --set sv.redis.password=... \
+    --set sv.secretKey=...
