@@ -34,3 +34,7 @@ services:
     build:
       context: ../pipeline
       dockerfile: Dockerfile
+    ports:
+      - "${PIPELINE_DEBUG_PORT:-5006}:5006"
+    environment:
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
