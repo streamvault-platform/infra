@@ -24,33 +24,18 @@ jobs:
             | tar xz -C /usr/local/bin
 
       - name: Lint (standard)
-        run: |
-          helm lint ./helm \
-            --set sv.postgres.password=test \
-            --set sv.redis.password=test
+        run: helm lint ./helm
 
       - name: Lint (with observability)
-        run: |
-          helm lint ./helm \
-            --set sv.postgres.password=test \
-            --set sv.redis.password=test \
-            --set sv.observability.enabled=true \
-            --set sv.observability.grafana.adminPassword=test
+        run: helm lint ./helm --set sv.observability.enabled=true
 
       - name: Validate rendered manifests (standard)
-        run: |
-          helm template streamvault ./helm \
-            --set sv.postgres.password=test \
-            --set sv.redis.password=test \
-          | kubeconform -strict -summary
+        run: helm template streamvault ./helm | kubeconform -strict -summary
 
       - name: Validate rendered manifests (with observability)
         run: |
           helm template streamvault ./helm \
-            --set sv.postgres.password=test \
-            --set sv.redis.password=test \
             --set sv.observability.enabled=true \
-            --set sv.observability.grafana.adminPassword=test \
           | kubeconform -strict -summary
 
   compose-test:
@@ -63,10 +48,10 @@ jobs:
         run: |
           {
             echo "POSTGRES_PASSWORD=cipassword"
-            echo "REDIS_PASSWORD=cipassword"            
+            echo "REDIS_PASSWORD=cipassword"
             echo "KAFKA_CLUSTER_ID=$(python3 -c 'import uuid; print(uuid.uuid4())')"
             echo "GF_SECURITY_ADMIN_PASSWORD=cipassword"
-            echo "RUSTFS_SECRET_KEY=changeme"
+            echo "STREAMVAULT_SECRET_KEY=cipassword"
           } > .env
 
       - name: Validate standard profile
