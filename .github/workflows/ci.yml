@@ -48,6 +48,8 @@ jobs:
         run: |
           {
             echo "POSTGRES_PASSWORD=cipassword"
+            echo "DB_MIGRATOR_PASSWORD=cipassword"
+            echo "DB_APP_PASSWORD=cipassword"
             echo "REDIS_PASSWORD=cipassword"
             echo "KAFKA_CLUSTER_ID=$(python3 -c 'import uuid; print(uuid.uuid4())')"
             echo "GF_SECURITY_ADMIN_PASSWORD=cipassword"
