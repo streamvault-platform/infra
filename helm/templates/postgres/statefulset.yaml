@@ -35,6 +35,16 @@ spec:
                   key: postgres-password
             - name: POSTGRES_DB
               value: {{ .Values.sv.postgres.database | quote }}
+            - name: DB_MIGRATOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: postgres-migrator-password
+            - name: DB_APP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamvault.secretName" . }}
+                  key: postgres-app-password
           livenessProbe:
             exec:
               command:
@@ -64,6 +74,13 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: {{ include "streamvault.fullname" . }}-postgres-init
+            defaultMode: 0755
   volumeClaimTemplates:
     - metadata:
         name: data

@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "streamvault.fullname" . }}-postgres-init
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+data:
+  01-init-service-accounts.sh: |
+    #!/bin/bash
+    set -e
+    psql -v ON_ERROR_STOP=1 \
+         --username "$POSTGRES_USER" \
+         --dbname   "$POSTGRES_DB"   \
+         --variable=migrator_pw="$DB_MIGRATOR_PASSWORD" \
+         --variable=app_pw="$DB_APP_PASSWORD"           \
+         --variable=db_name="$POSTGRES_DB"              \
+    <<-'EOF'
+        CREATE USER streamvault_migrator WITH PASSWORD :'migrator_pw';
+        CREATE USER streamvault_core WITH PASSWORD :'app_pw';
+        ALTER SCHEMA public OWNER TO streamvault_migrator;
+        GRANT CONNECT ON DATABASE :"db_name" TO streamvault_migrator;
+        GRANT CONNECT ON DATABASE :"db_name" TO streamvault_core;
+        GRANT USAGE ON SCHEMA public TO streamvault_core;
+        ALTER DEFAULT PRIVILEGES FOR ROLE streamvault_migrator IN SCHEMA public
+            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO streamvault_core;
+        ALTER DEFAULT PRIVILEGES FOR ROLE streamvault_migrator IN SCHEMA public
+            GRANT USAGE, SELECT ON SEQUENCES TO streamvault_core;
+    EOF

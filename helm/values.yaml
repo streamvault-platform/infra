@@ -17,11 +17,15 @@ sv:
       pullPolicy: IfNotPresent
     # -- Database name for the core service
     database: streamvault_core
-    # -- PostgreSQL superuser username
+    # -- PostgreSQL superuser username (used only for init; not exposed to the application)
     username: streamvault
-    # -- PostgreSQL password; leave empty to auto-generate on first install.
+    # -- PostgreSQL superuser password; leave empty to auto-generate on first install.
     # Retrieve with: kubectl get secret <release>-streamvault-secrets -o jsonpath='{.data.postgres-password}' | base64 -d
     password: ""
+    # -- Password for streamvault_migrator (Flyway DDL user); auto-generated if empty.
+    migratorPassword: ""
+    # -- Password for streamvault_core (Hibernate Reactive DML user); auto-generated if empty.
+    appPassword: ""
     # -- PVC size for the postgres data directory
     storage: 10Gi
     # -- StorageClass name; leave empty to use the cluster default

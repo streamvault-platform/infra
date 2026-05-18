@@ -20,8 +20,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-streamvault}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-streamvault_core}
+      DB_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:?DB_MIGRATOR_PASSWORD is required}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?DB_APP_PASSWORD is required}
     volumes:
       - core_data:/var/lib/postgresql
+      - ./init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test:
         [
@@ -191,12 +194,13 @@ services:
         condition: service_healthy
     volumes:
       - jwt_keys:/jwt:ro
-    # TODO: might get rid of quarkus prefix, user streamvault namespace in env vars (also check helm)
     environment:
-      QUARKUS_DATASOURCE_REACTIVE_URL: postgresql://streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
-      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-streamvault}
-      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      CORE_DATASOURCE_REACTIVE_URL: postgresql://streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      CORE_DATASOURCE_USERNAME: streamvault_core
+      CORE_DATASOURCE_PASSWORD: ${DB_APP_PASSWORD:?DB_APP_PASSWORD is required}
+      CORE_DATASOURCE_JDBC_URL: jdbc:postgresql://streamvault-postgres:5432/${POSTGRES_DB:-streamvault_core}
+      CORE_FLYWAY_USERNAME: streamvault_migrator
+      CORE_FLYWAY_PASSWORD: ${DB_MIGRATOR_PASSWORD:?DB_MIGRATOR_PASSWORD is required}
       KAFKA_BOOTSTRAP_SERVERS: streamvault-kafka:9092
       STREAMVAULT_AUTH_JWT_PRIVATE_KEY_LOCATION: /jwt/private.pem
       STREAMVAULT_AUTH_JWT_PUBLIC_KEY_LOCATION: /jwt/cert.pem
@@ -209,8 +213,8 @@ services:
       STREAMVAULT_MEDIA_PATH: ${STREAMVAULT_MEDIA_PATH:-/var/streamvault/media}
       STREAMVAULT_INTERNAL_BASE_URL: ${STREAMVAULT_INTERNAL_BASE_URL:-http://streamvault-core:8080}
       STREAMVAULT_INTERNAL_SIGNING_SECRET: ${STREAMVAULT_INTERNAL_SIGNING_SECRET:-${STREAMVAULT_SECRET_KEY}}
-      QUARKUS_REDIS_HOSTS: redis://streamvault-redis:6379
-      QUARKUS_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      CORE_REDIS_HOSTS: redis://streamvault-redis:6379
+      CORE_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
 
   streamvault-pipeline:
     image: ${PIPELINE_IMAGE:-ghcr.io/streamvault-platform/pipeline:0.1.0-dev}
