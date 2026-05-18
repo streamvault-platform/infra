@@ -157,6 +157,25 @@ sv:
         cpu: "1"
         memory: 512Mi
 
+  # ── Web client ──────────────────────────────────────────────────────────────
+  web:
+    image:
+      repository: ghcr.io/streamvault-platform/web
+      tag: "0.1.0-dev"
+      pullPolicy: Always
+    # -- Number of replicas
+    replicas: 1
+    # -- URL of the core API as seen by the browser (e.g. https://api.myserver.com).
+    # Leave empty when web and API share the same origin (e.g. behind a reverse proxy).
+    apiUrl: ""
+    resources:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 200m
+        memory: 64Mi
+
   # ── Pipeline service ────────────────────────────────────────────────────────
   pipeline:
     image:

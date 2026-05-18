@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamvault.fullname" . }}-web
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "streamvault.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.sv.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamvault.componentSelectorLabels" (list . "web") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "streamvault.componentSelectorLabels" (list . "web") | nindent 8 }}
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.sv.web.image.repository }}:{{ .Values.sv.web.image.tag }}"
+          imagePullPolicy: {{ .Values.sv.web.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: STREAMVAULT_API_URL
+              value: {{ .Values.sv.web.apiUrl | quote }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.sv.web.resources | nindent 12 }}

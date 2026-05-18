@@ -216,6 +216,22 @@ services:
       CORE_REDIS_HOSTS: redis://streamvault-redis:6379
       CORE_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
 
+  streamvault-web:
+    image: ${WEB_IMAGE:-ghcr.io/streamvault-platform/web:0.1.0-dev}
+    profiles: [ standard, full ]
+    restart: unless-stopped
+    networks: [ streamvault-net ]
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    environment:
+      STREAMVAULT_API_URL: ${STREAMVAULT_API_URL:-}
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost/ > /dev/null || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
   streamvault-pipeline:
     image: ${PIPELINE_IMAGE:-ghcr.io/streamvault-platform/pipeline:0.1.0-dev}
     profiles: [ standard, full ]
