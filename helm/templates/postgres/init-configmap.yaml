@@ -16,6 +16,7 @@ data:
          --variable=app_pw="$DB_APP_PASSWORD"           \
          --variable=db_name="$POSTGRES_DB"              \
     <<-'EOF'
+        CREATE EXTENSION IF NOT EXISTS pg_trgm;
         CREATE USER streamvault_migrator WITH PASSWORD :'migrator_pw';
         CREATE USER streamvault_core WITH PASSWORD :'app_pw';
         ALTER SCHEMA public OWNER TO streamvault_migrator;
