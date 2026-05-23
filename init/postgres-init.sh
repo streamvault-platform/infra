@@ -11,6 +11,9 @@ psql -v ON_ERROR_STOP=1 \
      --variable=app_pw="$DB_APP_PASSWORD"           \
      --variable=db_name="$POSTGRES_DB"              \
 <<-'EOF'
+    -- Required by Flyway full-text search migrations; superuser creates it here.
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
     -- Flyway runs migrations as this user; owns the public schema for DDL.
     CREATE USER streamvault_migrator WITH PASSWORD :'migrator_pw';
 

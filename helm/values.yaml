@@ -110,9 +110,9 @@ sv:
       # -- Service type: LoadBalancer for cloud, NodePort for bare-metal
       type: LoadBalancer
       # -- HTTP port
-      httpPort: 8080
-      # -- HTTPS port (reserved; TLS termination not yet configured)
-      httpsPort: 8443
+      httpPort: 18080
+      # -- HTTPS port
+      httpsPort: 18443
     resources:
       requests:
         cpu: 100m
