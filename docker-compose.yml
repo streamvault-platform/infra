@@ -221,8 +221,6 @@ services:
     profiles: [ standard, full ]
     restart: unless-stopped
     networks: [ streamvault-net ]
-    ports:
-      - "${WEB_PORT:-3000}:80"
     environment:
       STREAMVAULT_API_URL: ${STREAMVAULT_API_URL:-}
     healthcheck:

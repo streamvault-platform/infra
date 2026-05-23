@@ -59,6 +59,10 @@ data:
                               route:
                                 cluster: streamvault_core
                                 prefix_rewrite: /stream/
+                            - match:
+                                prefix: /
+                              route:
+                                cluster: streamvault_web
                     http_filters:
                       - name: envoy.filters.http.router
                         typed_config:
@@ -78,3 +82,17 @@ data:
                         socket_address:
                           address: {{ include "streamvault.fullname" . }}-core
                           port_value: 8080
+
+        - name: streamvault_web
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: streamvault_web
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: {{ include "streamvault.fullname" . }}-web
+                          port_value: 80

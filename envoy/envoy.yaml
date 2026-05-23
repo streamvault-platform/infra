@@ -48,7 +48,12 @@ static_resources:
                             prefix: /stream/
                           route:
                             cluster: streamvault_core
-                            prefix_rewrite: /stream/
+                            timeout: 0s
+                        - match:
+                            prefix: /
+                          route:
+                            cluster: streamvault_web
+                            timeout: 15s
                 http_filters:
                   - name: envoy.filters.http.router
                     typed_config:
@@ -56,7 +61,7 @@ static_resources:
 
   clusters:
     - name: streamvault_core
-      connect_timeout: 5s
+      connect_timeout: 0.25s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -68,3 +73,17 @@ static_resources:
                     socket_address:
                       address: streamvault-core
                       port_value: 8080
+
+    - name: streamvault_web
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: streamvault_web
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: streamvault-web
+                      port_value: 80

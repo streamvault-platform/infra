@@ -165,8 +165,9 @@ sv:
       pullPolicy: Always
     # -- Number of replicas
     replicas: 1
-    # -- URL of the core API as seen by the browser (e.g. https://api.myserver.com).
-    # Leave empty when web and API share the same origin (e.g. behind a reverse proxy).
+    # -- API URL injected at container startup. Only needed for split deployments
+    # where web and backend run on different servers. Leave empty when deploying
+    # the full stack together.
     apiUrl: ""
     resources:
       requests:

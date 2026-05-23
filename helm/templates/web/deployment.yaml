@@ -24,9 +24,11 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
+          {{- if .Values.sv.web.apiUrl }}
           env:
             - name: STREAMVAULT_API_URL
               value: {{ .Values.sv.web.apiUrl | quote }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /
