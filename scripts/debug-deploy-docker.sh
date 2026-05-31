@@ -21,5 +21,7 @@ docker build -t streamvault-core:local \
   -f "${SCRIPT_DIR}/../core/src/main/docker/Dockerfile.jvm" \
   "${SCRIPT_DIR}/../core"
 
+docker build -t streamvault-web:local "${SCRIPT_DIR}/../web"
+
 $COMPOSE down --remove-orphans
 $COMPOSE up -d

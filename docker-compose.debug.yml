@@ -1,8 +1,9 @@
-# Debug overlay — enables JDWP on core and builds both services from local source.
+# Debug overlay — enables JDWP on core and builds all services from local source.
 #
 # Prerequisites (JAR must exist before docker compose build):
 #   ../core/mvnw -f ../core/pom.xml package -DskipTests
 #   (cd ../pipeline && sbt assembly)
+# Note: web builds entirely within Docker — no prerequisite step needed.
 #
 # Usage:
 #   cp .env.debug.example .env   # first time only
@@ -38,3 +39,8 @@ services:
       - "${PIPELINE_DEBUG_PORT:-5006}:5006"
     environment:
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
+
+  streamvault-web:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
