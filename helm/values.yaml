@@ -131,6 +131,10 @@ sv:
     replicas: 1
     # -- Health check path exposed by the app; must return 200 when ready
     healthPath: /health
+    # -- Allow anyone to register a new account without an invite link.
+    openRegistration: false
+    # -- Default invite link expiry in days. 0 = links never expire.
+    inviteDefaultExpiryDays: 7
     # -- Storage backend for media files. Options: s3 | filesystem
     storageBackend: s3
     jwtStorageClass: "" # -- StorageClass for JWT keys PVC; leave empty to use cluster default

@@ -109,6 +109,10 @@ spec:
             - name: STREAMVAULT_S3_REGION
               value: {{ .Values.sv.rustfs.region | quote }}
             {{- end }}
+            - name: STREAMVAULT_OPEN_REGISTRATION
+              value: {{ .Values.sv.core.openRegistration | quote }}
+            - name: STREAMVAULT_INVITE_DEFAULT_EXPIRY_DAYS
+              value: {{ .Values.sv.core.inviteDefaultExpiryDays | quote }}
             - name: STREAMVAULT_STORAGE_BACKEND
               value: {{ .Values.sv.core.storageBackend | quote }}
             - name: STREAMVAULT_MEDIA_PATH
