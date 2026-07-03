@@ -70,7 +70,7 @@ services:
       start_period: 30s
 
   streamvault-kafka-init:
-    image: apache/kafka:3.7.2
+    image: apache/kafka:4.2.0
     profiles: [ standard, full ]
     restart: "no"
     networks: [ streamvault-net ]
@@ -170,6 +170,9 @@ services:
       - "${ENVOY_HTTPS_PORT:-18443}:8443"
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      streamvault-core:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9901'" ]
       interval: 10s
@@ -189,12 +192,12 @@ services:
         condition: service_healthy
       streamvault-redis:
         condition: service_healthy
-      streamvault-envoy:
-        condition: service_healthy
       streamvault-jwt-init:
         condition: service_completed_successfully
       streamvault-rustfs:
         condition: service_healthy
+      streamvault-kafka-init:
+        condition: service_completed_successfully
     volumes:
       - jwt_keys:/jwt:ro
     environment:
@@ -224,6 +227,9 @@ services:
     profiles: [ standard, full ]
     restart: unless-stopped
     networks: [ streamvault-net ]
+    depends_on:
+      streamvault-envoy:
+        condition: service_healthy
     environment:
       STREAMVAULT_API_URL: ${STREAMVAULT_API_URL:-}
     healthcheck:
