@@ -221,6 +221,12 @@ services:
       STREAMVAULT_INTERNAL_SIGNING_SECRET: ${STREAMVAULT_INTERNAL_SIGNING_SECRET:-${STREAMVAULT_SECRET_KEY}}
       CORE_REDIS_HOSTS: redis://streamvault-redis:6379
       CORE_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   streamvault-web:
     image: ${WEB_IMAGE:-ghcr.io/streamvault-platform/web:0.1.0-dev}
